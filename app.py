@@ -265,12 +265,7 @@ productos = {
 
 st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 
-Para eliminar ese persistente botón de "Manage app" en la impresión, el problema es que Streamlit lo inyecta a través de un "Shadow DOM" o un iframe externo que el CSS estándar a veces no logra penetrar a menos que seamos extremadamente específicos.
 
-Aquí tienes el bloque de CSS definitivo. He añadido selectores que atacan la estructura interna de la nube de Streamlit.
-
-Sustituye tu bloque de CSS por este:
-Python
 # --- CSS PARA LIMPIAR IMPRESIÓN Y OCULTAR INTERFAZ (VERSIÓN RADICAL) ---
 st.markdown("""
     <style>

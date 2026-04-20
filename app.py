@@ -333,81 +333,89 @@ if st.session_state.lista_carga:
     st.markdown(f"### TOTAL A PROCESAR: **${total_final:,.2f}**")
 
     # --- EN EL BLOQUE DE GENERAR NOTIFICACIÓN ---
-if st.button("🚀 Generar Vista Previa Profesional"):
+if st.button("🚀 Generar Recibo de Auditoría"):
     ahora = datetime.now()
-    fecha_str = ahora.strftime("%d/%m/%Y")
+    fecha_str = ahora.strftime("%d/%m/%Y %H:%M")
 
-    # 1. Definimos el cuerpo del mensaje
+    # 1. Cuerpo del mensaje formal
     cuerpo_formal = (
         f"Me dirijo a usted desde el área de Stock a los fines de informarle y entregarle "
         f"el resultado de auditoría sobre sus equipos, materiales y herramientas que fueron "
         f"entregados en el establecimiento. El mismo ha arrojado un faltante de herramientas "
-        f"de \"${total_final:,.2f}\", que serán descontados de su liquidación final."
+        f"de <b>${total_final:,.2f}</b>, que serán descontados de su liquidación final."
     )
 
-    # 2. Creamos una versión de texto "dibujada" para que parezca una tabla en el TXT
-    separador = "-" * 70
-    tabla_txt = f"{'CANT':<6} | {'CODIGO':<10} | {'DESCRIPCION':<35} | {'SUBTOTAL':>12}\n"
-    tabla_txt += separador + "\n"
+    # 2. Construcción de las filas del recibo en HTML
+    filas_html = ""
     for item in st.session_state.lista_carga:
         cant = item.get('cantidad', 1)
         subt = item.get('subtotal', item['precio'])
-        desc = item['desc'][:33]
-        tabla_txt += f"{cant:<6} | {item['codigo']:<10} | {desc:<35} | ${subt:>12,.2f}\n"
+        desc = item['desc'][:30]  # Limitar descripción
+        filas_html += f"""
+        <tr>
+            <td style="text-align:center; border-bottom: 1px dashed #ddd; padding: 5px;">{cant}</td>
+            <td style="border-bottom: 1px dashed #ddd; padding: 5px;">{item['codigo']}<br><small>{desc}</small></td>
+            <td style="text-align:right; border-bottom: 1px dashed #ddd; padding: 5px;">${subt:,.2f}</td>
+        </tr>
+        """
 
-    # 3. Construimos el documento final para descargar
-    documento_final = (
-        f"NOTIFICACIÓN DE AUDITORÍA - ÁREA DE STOCK\n"
-        f"Fecha: {fecha_str}\n\n"
-        f"A quien corresponda:\n\n"
-        f"{cuerpo_formal}\n\n"
-        f"DETALLE DEL FALTANTE:\n"
-        f"{separador}\n"
-        f"{tabla_txt}"
-        f"{separador}\n"
-        f"MONTO TOTAL A DESCONTAR: ${total_final:,.2f}\n\n\n"
-        f"__________________________\n"
-        f"Firma y Aclaración\n"
-        f"Responsable de Stock"
-    )
+    # 3. Diseño del Recibo con CSS
+    recibo_estilo = f"""
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px;">
+        <div style="background-color: white; max-width: 500px; margin: auto; padding: 30px; 
+                    border: 1px solid #ccc; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); 
+                    font-family: 'Courier New', Courier, monospace; color: #333;">
+            
+            <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px;">
+                <h2 style="margin: 0; letter-spacing: 2px;">AUDITORÍA DE STOCK</h2>
+                <div style="font-size: 12px;">Comprobante de Faltante</div>
+            </div>
 
-    # --- MOSTRAR EN PANTALLA ESTILO "HOJA DE WORD" ---
-    st.markdown("---")
-    st.subheader("📄 Vista Previa del Documento")
-    
-    # Usamos HTML/CSS para que parezca una hoja de papel
-    st.markdown(f"""
-        <div style="background-color: white; color: #333; padding: 40px; border-radius: 5px; border: 1px solid #ddd; font-family: 'Arial', sans-serif; box-shadow: 2px 2px 10px rgba(0,0,0,0.1);">
-            <div style="text-align: right; font-size: 14px;">Buenos Aires, {fecha_str}</div>
-            <div style="text-align: center; font-weight: bold; font-size: 18px; margin-top: 20px;">NOTIFICACIÓN DE AUDITORÍA</div>
-            <div style="margin-top: 30px; font-weight: bold;">A quien corresponda:</div>
-            <div style="margin-top: 15px; line-height: 1.6; text-align: justify;">
+            <div style="margin-top: 15px; font-size: 13px; text-align: right;">
+                <b>FECHA:</b> {fecha_str}
+            </div>
+
+            <div style="margin-top: 20px; font-size: 14px; text-align: justify; font-family: sans-serif; line-height: 1.4;">
                 {cuerpo_formal}
             </div>
-            <div style="margin-top: 30px; font-weight: bold;">DETALLE:</div>
-            <hr>
-            <pre style="background-color: #f9f9f9; padding: 10px; border-radius: 5px; font-size: 12px; overflow-x: auto;">{tabla_txt}</pre>
-            <div style="text-align: right; font-weight: bold; font-size: 16px; margin-top: 10px;">TOTAL: ${total_final:,.2f}</div>
-            <div style="margin-top: 50px; text-align: center;">
-                <br>__________________________<br>
-                <span style="font-size: 12px;">Firma y Aclaración Responsable Stock</span>
+
+            <table style="width: 100%; margin-top: 25px; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #333;">
+                        <th style="width: 15%;">CANT</th>
+                        <th style="width: 55%; text-align: left;">DETALLE</th>
+                        <th style="width: 30%; text-align: right;">SUBTOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {filas_html}
+                </tbody>
+            </table>
+
+            <div style="margin-top: 20px; text-align: right; font-size: 18px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px;">
+                TOTAL: ${total_final:,.2f}
+            </div>
+
+            <div style="margin-top: 50px; text-align: center; font-size: 12px;">
+                <p>_________________________________</p>
+                <b>FIRMA RESPONSABLE DE STOCK</b>
+                <p style="color: #666; margin-top: 5px;">Documento interno de control</p>
             </div>
         </div>
-    """, unsafe_allow_html=True)
+    </div>
+    """
 
-    st.write("") # Espaciador
-    
-    # Botones de acción
-    col_btn1, col_btn2 = st.columns(2)
-    
-    with col_btn1:
-        # Esto permite copiar rápido para pegar en un mail o WhatsApp
-        st.text_area("Texto listo para copiar:", documento_final, height=150)
-    
-    with col_btn2:
-        st.download_button(
-            label="📥 Descargar para Editar (TXT Profesional)",
-            data=documento_final,
-            file_name=f"Auditoria_{ahora.strftime('%d-%m-%Y')}.txt",
-            mime="text/plain"
-        )
+    # Mostrar el recibo en Streamlit
+    st.markdown(recibo_estilo, unsafe_allow_html=True)
+
+    # Botón para descargar el texto plano (por si necesitan enviarlo por chat)
+    documento_texto = f"AUDITORIA STOCK - {fecha_str}\n\nTOTAL FALTANTE: ${total_final:,.2f}\n\nDetalle:\n"
+    for item in st.session_state.lista_carga:
+        documento_texto += f"- {item.get('cantidad',1)}x {item['codigo']} | ${item.get('subtotal',0):,.2f}\n"
+
+    st.download_button(
+        label="📥 Descargar Resumen para registro",
+        data=documento_texto,
+        file_name=f"recibo_stock_{ahora.strftime('%d_%m_%Y')}.txt",
+        mime="text/plain"
+    )

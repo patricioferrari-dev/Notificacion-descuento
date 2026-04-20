@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime
+
 # --- BASE DE DATOS ---
 # Se eliminó la línea duplicada que causaba el SyntaxError
 productos = {
@@ -275,17 +276,17 @@ st.set_page_config(page_title="Sistema de Stock", layout="wide")
 if 'lista_carga' not in st.session_state:
     st.session_state.lista_carga = []
 
-st.title("📋 Gestión de Auditoría de Stock")
+st.title("📋 Gestión de Artículos")
 
 # --- SECCIÓN DE CARGA ---
 col1, col2 = st.columns([1, 2])
 
 with col1:
     st.subheader("Cargar Artículo")
-    codigo_input = st.text_input("Código del Artículo:").strip()
+    codigo_input = st.text_input("Código:").strip()
     cantidad_input = st.number_input("Cantidad:", min_value=1, value=1, step=1)
     
-    if st.button("➕ Agregar a la lista"):
+    if st.button("➕ Agregar"):
         if codigo_input in productos:
             item = productos[codigo_input].copy()
             item['codigo'] = codigo_input
@@ -296,89 +297,65 @@ with col1:
         else:
             st.error("Código no encontrado.")
 
-    if st.button("🗑️ Vaciar Lista"):
-        st.session_state.lista_carga = []
-        st.rerun()
-
 # --- SECCIÓN DE RESUMEN ---
 st.divider()
-total_final = 0
+st.subheader("📝 Resumen de Carga")
 
+total_final = 0
 if st.session_state.lista_carga:
-    st.subheader("📝 Detalle de Carga")
-    
     for i, item in enumerate(st.session_state.lista_carga):
         c1, c2, c3, c4, c5 = st.columns([1, 3, 1, 1, 0.5])
-        c1.write(f"{item.get('cantidad', 1)}")
+        c1.write(f"{item['cantidad']}")
         c2.write(f"**{item['desc']}**")
         c3.write(f"${item['precio']:,.2f}")
         c4.write(f"**${item['subtotal']:,.2f}**")
+        total_final += item['subtotal']
         if c5.button("❌", key=f"del_{i}"):
             st.session_state.lista_carga.pop(i)
             st.rerun()
-        total_final += item['subtotal']
 
-    st.markdown(f"## TOTAL: ${total_final:,.2f}")
+    st.markdown(f"### TOTAL: ${total_final:,.2f}")
 
+    # --- GENERAR RECIBO ---
     if st.button("🚀 Generar Recibo de Auditoría"):
         ahora = datetime.now()
         fecha_str = ahora.strftime("%d/%m/%Y %H:%M")
 
-        # Construimos las filas de la tabla primero
         filas_html = ""
         for item in st.session_state.lista_carga:
-            cant = item.get('cantidad', 1)
-            subt = item.get('subtotal', 0)
-            desc = item.get('desc', 'Sin descripción')[:30]
-            cod = item.get('codigo', 'S/C')
-            
             filas_html += f"""
             <tr>
-                <td style="text-align:center; border-bottom: 1px dashed #ddd; padding: 5px;">{cant}</td>
-                <td style="border-bottom: 1px dashed #ddd; padding: 5px;">{cod}<br><small>{desc}</small></td>
-                <td style="text-align:right; border-bottom: 1px dashed #ddd; padding: 5px;">${subt:,.2f}</td>
-            </tr>
-            """
+                <td style='text-align:center; border-bottom: 1px dashed #ddd; padding: 5px;'>{item['cantidad']}</td>
+                <td style='border-bottom: 1px dashed #ddd; padding: 5px;'>{item['codigo']}<br><small>{item['desc'][:35]}</small></td>
+                <td style='text-align:right; border-bottom: 1px dashed #ddd; padding: 5px;'>${item['subtotal']:,.2f}</td>
+            </tr>"""
 
-        # Todo el diseño va dentro de esta variable
-        recibo_diseno = f"""
-        <div style="background-color: white; max-width: 500px; margin: auto; padding: 25px; border: 1px solid #ccc; font-family: 'Courier New', Courier, monospace; color: #333; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);">
+        recibo_html = f"""
+        <div style="background-color: white; max-width: 500px; margin: auto; padding: 30px; border: 1px solid #ccc; font-family: 'Courier New', Courier, monospace; color: #333; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);">
             <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px;">
                 <h2 style="margin: 0;">AUDITORÍA DE STOCK</h2>
-                <div style="font-size: 12px;">Comprobante de Faltante</div>
+                <small>Comprobante de Faltante</small>
             </div>
-
-            <div style="margin-top: 15px; font-size: 13px; text-align: right;">
-                <b>FECHA:</b> {fecha_str}
-            </div>
-
-            <div style="margin-top: 20px; font-size: 14px; text-align: justify; font-family: sans-serif; line-height: 1.4;">
-                Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría ha arrojado un faltante de herramientas de <b>${total_final:,.2f}</b>, que serán descontados de su liquidación final.
-            </div>
-
-            <table style="width: 100%; margin-top: 25px; border-collapse: collapse; font-size: 13px;">
-                <thead>
-                    <tr style="border-bottom: 2px solid #333;">
-                        <th style="width: 15%;">CANT</th>
-                        <th style="width: 55%; text-align: left;">DETALLE</th>
-                        <th style="width: 30%; text-align: right;">SUBTOTAL</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filas_html}
-                </tbody>
+            <p style="text-align: right; font-size: 12px; margin-top: 10px;"><b>FECHA:</b> {fecha_str}</p>
+            <p style="font-size: 14px; font-family: sans-serif; line-height: 1.4; text-align: justify;">
+                Se informa el resultado de la auditoría sobre equipos y herramientas. 
+                El total faltante de <b>${total_final:,.2f}</b> será descontado de su liquidación.
+            </p>
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px;">
+                <tr style="border-bottom: 2px solid #333;">
+                    <th>CANT</th><th style="text-align:left;">DETALLE</th><th style="text-align:right;">SUBTOTAL</th>
+                </tr>
+                {filas_html}
             </table>
-
-            <div style="margin-top: 20px; text-align: right; font-size: 18px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px;">
-                TOTAL: ${total_final:,.2f}
-            </div>
-
-            <div style="margin-top: 50px; text-align: center; font-size: 12px;">
+            <h3 style="text-align: right; border-top: 2px solid #333; padding-top: 10px;">TOTAL: ${total_final:,.2f}</h3>
+            <div style="margin-top: 40px; text-align: center; font-size: 12px;">
                 <p>_________________________________</p>
-                <b>FIRMA RESPONSABLE DE STOCK</b>
+                <b>FIRMA RESPONSABLE</b>
             </div>
-        </div>
-        """
+        </div>"""
         
-        # ESTA ES LA LÍNEA CLAVE:
-        st.markdown(recibo_diseno, unsafe_allow_html=True)
+        st.markdown(recibo_html, unsafe_allow_html=True)
+        
+        # Botón de descarga TXT
+        txt_data = f"RECIBO AUDITORIA - {fecha_str}\nTOTAL: ${total_final:,.2f}"
+        st.download_button("📥 Descargar Registro", txt_data, "recibo.txt")

@@ -352,39 +352,44 @@ if st.session_state.carrito:
     if c3.button("🚀 Generar Recibo Formal", use_container_width=True):
         st.session_state.ver_recibo = True
 
-    # --- VISTA DEL RECIBO FORMAL (EL DISEÑO DE LA FOTO) ---
+    # --- VISTA DEL RECIBO FORMAL ---
     if st.session_state.ver_recibo:
-        st.markdown("---")
+        st.divider()
+        
         fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
         
-        # Construimos las filas de la tabla dinámicamente
+        # 1. Generamos las filas de la tabla
         filas_html = ""
         for _, row in df.iterrows():
             filas_html += f"""
             <tr>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">{row['Cantidad']}</td>
-                <td style="border: 1px solid #ddd; padding: 8px;">{row['Código']} - {row['Descripción']}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align:right;">${row['Subtotal']:,.2f}</td>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align:center;">{row['Cantidad']}</td>
+                <td style="border: 1px solid #ddd; padding: 10px;">{row['Código']} - {row['Descripción']}</td>
+                <td style="border: 1px solid #ddd; padding: 10px; text-align:right;">${row['Subtotal']:,.2f}</td>
             </tr>
             """
 
-        # El contenedor principal del recibo
-        recibo_html = f"""
-        <div style="background-color: white; padding: 30px; border: 1px solid #ccc; border-radius: 10px; color: black; font-family: sans-serif;">
-            <h1 style="text-align: center; color: #1e3d59; margin-bottom: 0;">AUDITORÍA DE STOCK</h1>
-            <hr style="border: 1px solid #1e3d59;">
-            <p style="text-align: right;"><b>FECHA:</b> {fecha_actual}</p>
+        # 2. Creamos el contenedor completo
+        # IMPORTANTE: El estilo 'background-color: white' y 'color: black' asegura que parezca una hoja
+        recibo_diseno = f"""
+        <div style="background-color: white; padding: 40px; border: 1px solid #eee; border-radius: 5px; color: #333; font-family: 'Helvetica', sans-serif;">
+            <h1 style="text-align: center; color: #1e3d59; font-size: 32px; margin-bottom: 5px;">AUDITORÍA DE STOCK</h1>
+            <div style="border-top: 3px solid #1e3d59; width: 100%; margin-bottom: 20px;"></div>
             
-            <p>Me dirijo a usted desde el área de Stock a los fines de informarle que 
-            el resultado de auditoría ha arrojado un faltante de herramientas de 
-            <b>${total_final:,.2f}</b>, que serán descontados de su liquidación final.</p>
+            <p style="text-align: right; font-weight: bold;">FECHA: {fecha_actual}</p>
             
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <p style="font-size: 16px; line-height: 1.6;">
+                Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría 
+                ha arrojado un faltante de herramientas de <b style="color: #d32f2f;">${total_final:,.2f}</b>, 
+                que serán descontados de su liquidación final.
+            </p>
+            
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
                 <thead>
-                    <tr style="background-color: #f2f2f2;">
-                        <th style="border: 1px solid #ddd; padding: 8px;">CANT</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">DETALLE</th>
-                        <th style="border: 1px solid #ddd; padding: 8px;">SUBTOTAL</th>
+                    <tr style="background-color: #f8f9fa;">
+                        <th style="border: 1px solid #ddd; padding: 12px;">CANT</th>
+                        <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">DETALLE</th>
+                        <th style="border: 1px solid #ddd; padding: 12px; text-align: right;">SUBTOTAL</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -393,22 +398,23 @@ if st.session_state.carrito:
             </table>
             
             <div style="margin-top: 30px; text-align: right;">
-                <h3 style="margin:0;">TOTAL A CARGO: ${total_final:,.2f}</h3>
+                <h2 style="margin: 0; color: #1e3d59;">TOTAL A CARGO: ${total_final:,.2f}</h2>
             </div>
             
-            <div style="margin-top: 60px; text-align: center;">
-                <p>__________________________________________</p>
-                <b>FIRMA DEL RESPONSABLE</b>
+            <div style="margin-top: 70px; text-align: center;">
+                <p style="margin-bottom: 0;">__________________________________________</p>
+                <b style="text-transform: uppercase; font-size: 12px;">Firma del Responsable</b>
             </div>
         </div>
         """
         
-        st.markdown(recibo_html, unsafe_allow_html=True)
+        # LA CLAVE ES ESTA LÍNEA:
+        st.markdown(recibo_diseno, unsafe_allow_html=True)
         
-        # Botón para cerrar la vista
+        st.caption("💡 Consejo: Para guardar como PDF, presiona Ctrl+P (o Cmd+P) y elige 'Guardar como PDF'.")
+        
         if st.button("❌ Cerrar Vista Previa"):
             st.session_state.ver_recibo = False
             st.rerun()
-
 else:
     st.info("La planilla está vacía. Ingrese un código arriba.")

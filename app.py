@@ -329,8 +329,17 @@ if st.session_state.carrito:
         st.session_state.ver_recibo = False
         st.rerun()
 
-    csv = df.to_csv(index=False).encode('utf-8-sig')
-    c2.download_button("💾 Exportar CSV", csv, "auditoria.csv", "text/csv", use_container_width=True)
+    # CORRECCIÓN AQUÍ: Exportación limpia para Excel
+    # Usamos utf-8-sig para que Excel abra las columnas automáticamente
+    csv = df.to_csv(index=False, sep=',', encoding='utf-8-sig').encode('utf-8-sig')
+    
+    c2.download_button(
+        label="💾 Exportar para Excel (CSV)",
+        data=csv,
+        file_name=f"auditoria_{datetime.now().strftime('%d_%m_%Y')}.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
 
     if c3.button("🚀 Vista Previa para Imprimir", use_container_width=True):
         st.session_state.ver_recibo = True

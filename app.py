@@ -378,5 +378,4 @@ else:
     with col_f2:
         st.write(" \n" * 4 + "__________________________\n**FIRMA AUDITOR**")
         st.write("Aclaración: _________________")
-        st.write("DNI: _________________")
-    
+            

@@ -273,13 +273,16 @@ productos = {
 
 st.set_page_config(page_title="Auditoría Estilo Excel", layout="wide")
 
+# --- INICIALIZACIÓN DE ESTADOS ---
 if 'carrito' not in st.session_state:
     st.session_state.carrito = []
+if 'mostrar_recibo' not in st.session_state:
+    st.session_state.mostrar_recibo = False
 
 st.title("📊 Auditoría de Stock - Formato Planilla")
 
 # --- ENTRADA DE DATOS ---
-with st.expander("➕ Cargar Nuevo Artículo", expanded=True):
+with st.expander("➕ Cargar Nuevo Artículo", expanded=not st.session_state.mostrar_recibo):
     col1, col2, col3 = st.columns([2, 1, 1])
     codigo = col1.text_input("Código del Artículo:").strip()
     cantidad = col2.number_input("Cantidad:", min_value=1, value=1)
@@ -294,6 +297,7 @@ with st.expander("➕ Cargar Nuevo Artículo", expanded=True):
                 "Subtotal": productos[codigo]["precio"] * cantidad
             }
             st.session_state.carrito.append(nuevo_item)
+            st.session_state.mostrar_recibo = False # Resetear vista si añade algo nuevo
             st.rerun()
         else:
             st.error("Código inexistente")
@@ -302,30 +306,28 @@ with st.expander("➕ Cargar Nuevo Artículo", expanded=True):
 st.subheader("📝 Planilla de Faltantes")
 
 if st.session_state.carrito:
-    # Convertimos la lista a un DataFrame de Pandas (el motor de Excel en Python)
     df = pd.DataFrame(st.session_state.carrito)
     
-    # Configuramos el editor para que parezca Excel
-    df_editado = st.data_editor(
+    # Editor de datos
+    st.data_editor(
         df,
         column_config={
             "Precio Unit.": st.column_config.NumberColumn(format="$ %.2f"),
             "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
             "Cantidad": st.column_config.NumberColumn(step=1),
         },
-        disabled=["Código", "Descripción", "Subtotal"], # Solo dejamos editar cantidad si quisieras
+        disabled=["Código", "Descripción", "Precio Unit.", "Subtotal"],
         hide_index=True,
         use_container_width=True,
         key="planilla_editor"
     )
 
-    # Recalcular Total
     total_final = df["Subtotal"].sum()
 
     col_t1, col_t2 = st.columns([3, 1])
     with col_t2:
         st.markdown(f"""
-            <div style="border: 2px solid #2e7d32; padding: 10px; border-radius: 5px; text-align: center; background-color: #f1f8e9;">
+            <div style="border: 2px solid #2e7d32; padding: 10px; border-radius: 5px; text-align: center; background-color: #f1f8e9; margin-top: 10px;">
                 <span style="color: #666; font-size: 14px;">TOTAL GENERAL</span><br>
                 <b style="font-size: 24px; color: #1b5e20;">${total_final:,.2f}</b>
             </div>
@@ -335,16 +337,78 @@ if st.session_state.carrito:
     st.divider()
     c1, c2, c3 = st.columns(3)
     
-    if c1.button("🗑️ Limpiar Planilla"):
+    if c1.button("🗑️ Limpiar Planilla", use_container_width=True):
         st.session_state.carrito = []
+        st.session_state.mostrar_recibo = False
         st.rerun()
 
-    if c2.button("💾 Exportar a Excel (CSV)"):
+    if c2.button("💾 Exportar a CSV", use_container_width=True):
         csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button("Descargar Archivo", csv, "auditoria.csv", "text/csv")
+        st.download_button("Click para Descargar", csv, "auditoria.csv", "text/csv")
 
-    if c3.button("🚀 Generar Recibo Formal"):
-        # Aquí puedes mantener tu diseño de recibo HTML anterior
-        st.info("Generando vista de impresión...")
+    if c3.button("🚀 Generar Vista de Impresión", use_container_width=True):
+        st.session_state.mostrar_recibo = True
+
+    # --- LÓGICA DEL RECIBO FORMAL ---
+    if st.session_state.mostrar_recibo:
+        st.divider()
+        st.subheader("📄 Recibo de Auditoría")
+        
+        fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
+        
+        # Construcción de filas de la tabla en HTML
+        filas_html = ""
+        for _, row in df.iterrows():
+            filas_html += f"""
+            <tr>
+                <td style="border-bottom: 1px solid #ddd; padding: 8px;">{row['Código']}</td>
+                <td style="border-bottom: 1px solid #ddd; padding: 8px;">{row['Descripción']}</td>
+                <td style="border-bottom: 1px solid #ddd; padding: 8px; text-align:center;">{row['Cantidad']}</td>
+                <td style="border-bottom: 1px solid #ddd; padding: 8px; text-align:right;">${row['Precio Unit.']:,.2f}</td>
+                <td style="border-bottom: 1px solid #ddd; padding: 8px; text-align:right;">${row['Subtotal']:,.2f}</td>
+            </tr>
+            """
+
+        recibo_template = f"""
+        <div style="background-color: white; padding: 40px; border: 1px solid #ccc; color: black; font-family: sans-serif;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 10px;">
+                <div>
+                    <h2 style="margin:0;">COMPROBANTE DE AUDITORÍA</h2>
+                    <p style="margin:0; color: #666;">Sistema de Gestión de Stock</p>
+                </div>
+                <div style="text-align: right;">
+                    <p style="margin:0;"><b>Fecha:</b> {fecha_actual}</p>
+                    <p style="margin:0;"><b>Nro:</b> {datetime.now().strftime("%Y%m%d%H%M")}</p>
+                </div>
+            </div>
+            
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead>
+                    <tr style="background-color: #f2f2f2;">
+                        <th style="padding: 10px; text-align: left;">CÓDIGO</th>
+                        <th style="padding: 10px; text-align: left;">DESCRIPCIÓN</th>
+                        <th style="padding: 10px; text-align: center;">CANT.</th>
+                        <th style="padding: 10px; text-align: right;">UNIT.</th>
+                        <th style="padding: 10px; text-align: right;">SUBTOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {filas_html}
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 30px; text-align: right;">
+                <h3 style="margin:0;">TOTAL A CARGO: ${total_final:,.2f}</h3>
+            </div>
+            
+            <div style="margin-top: 50px; display: flex; justify-content: space-around;">
+                <div style="border-top: 1px solid #000; width: 200px; text-align: center; padding-top: 5px;">Firma Auditor</div>
+                <div style="border-top: 1px solid #000; width: 200px; text-align: center; padding-top: 5px;">Firma Técnico</div>
+            </div>
+        </div>
+        """
+        st.markdown(recibo_template, unsafe_allow_html=True)
+        st.caption("Tip: Para imprimir, usa Ctrl+P y selecciona 'Guardar como PDF'")
+
 else:
     st.info("La planilla está vacía. Ingrese un código arriba.")

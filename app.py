@@ -273,6 +273,28 @@ productos = {
 
 st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 
+# --- OCULTAR ELEMENTOS EN IMPRESIÓN ---
+st.markdown("""
+    <style>
+    /* Ocultar elementos de la interfaz de Streamlit en la pantalla y en la impresión */
+    #MainMenu, footer, header {visibility: hidden; height: 0;}
+    
+    /* Reglas específicas para cuando se presiona Imprimir (Ctrl+P) */
+    @media print {
+        /* Ocultar botones de Streamlit (como el de 'Volver a la Edición') */
+        .stButton {display: none !important;}
+        
+        /* Eliminar márgenes forzados y pies de página del navegador (URL, fecha) */
+        @page {
+            margin: 0.5cm;
+        }
+        body {
+            margin: 0;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 if 'carrito' not in st.session_state:
     st.session_state.carrito = []
 if 'ver_recibo' not in st.session_state:

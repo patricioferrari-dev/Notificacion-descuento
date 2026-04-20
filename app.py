@@ -343,7 +343,7 @@ if st.session_state.lista_carga:
             f"Me dirijo a usted desde el área de Stock a los fines de informarle y entregarle "
             f"el resultado de auditoria sobre sus equipos, materiales y herramientas que fueron "
             f"entregados en el establecimiento. El mismo ha arrojado faltantes por "
-            f"de \"${total_final:,.2f}\", que serán descontados de su liquidación final."
+            f" \"${total_final:,.2f}\", que serán descontados de su liquidación final."
         )
 
         # Construcción del contenido del texto

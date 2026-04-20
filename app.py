@@ -329,16 +329,24 @@ if st.session_state.carrito:
         st.session_state.ver_recibo = False
         st.rerun()
 
-    # CORRECCIÓN AQUÍ: Exportación limpia para Excel
-    # Usamos utf-8-sig para que Excel abra las columnas automáticamente
-    csv = df.to_csv(index=False, sep=',', encoding='utf-8-sig').encode('utf-8-sig')
+    # --- EXPORTACIÓN PARA EXCEL ---
+    # 1. Creamos una copia para no alterar lo que ves en pantalla
+    df_excel = df.copy()
+    
+    # 2. Convertimos a CSV usando PUNTO Y COMA (;) que es lo que Excel reconoce en español
+    # El encoding 'utf-8-sig' es vital para que Excel no rompa los caracteres
+    csv = df_excel.to_csv(index=False, sep=';', decimal=',', encoding='utf-8-sig').encode('utf-8-sig')
     
     c2.download_button(
-        label="💾 Exportar para Excel (CSV)",
+        label="💾 Exportar para Excel",
         data=csv,
         file_name=f"auditoria_{datetime.now().strftime('%d_%m_%Y')}.csv",
         mime="text/csv",
         use_container_width=True
+    )
+
+    if c3.button("🚀 Vista Previa para Imprimir", use_container_width=True):
+        st.session_state.ver_recibo = True
     )
 
     if c3.button("🚀 Vista Previa para Imprimir", use_container_width=True):

@@ -265,65 +265,37 @@ productos = {
 
 st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 
-# --- ELIMINACIÓN RADICAL DE INTERFAZ (MANAGE APP Y OTROS) ---
+# --- CSS PARA LIMPIAR IMPRESIÓN Y OCULTAR INTERFAZ ---
 st.markdown("""
     <style>
-    /* 1. OCULTAR BOTÓN NEGRO 'MANAGE APP' Y DESPLEGABLES */
-    /* Ataca el botón por su clase, su posición y su contenedor */
-    div[data-testid="stStatusWidget"], 
-    .stDeployButton, 
-    .stAppDeployButton, 
-    header, 
-    footer, 
-    #MainMenu, 
-    #stDecoration {
+    header, footer, #MainMenu, .stAppDeployButton, .stDeployButton, iframe[title="Manage app"] {
         display: none !important;
         visibility: hidden !important;
     }
-
-    /* OCULTAR EL BOTÓN ESPECÍFICO DE LA ESQUINA INFERIOR DERECHA */
-    button[title="Manage app"], 
-    iframe[title="Manage app"], 
-    div.stActionButton {
-        display: none !important;
-    }
-
-    /* ELIMINAR EL MARGEN QUE DEJA LA BARRA SUPERIOR */
-    .main .block-container {
-        padding-top: 0rem !important;
-        margin-top: -3rem !important;
-    }
-
-    /* 2. REGLAS EXCLUSIVAS PARA IMPRESIÓN */
     @media print {
-        /* Ocultar ABSOLUTAMENTE TODO lo que no sea el contenido */
-        .stButton, button, .stDownloadButton {
+        .stButton, button, .stDownloadButton, [data-testid="stExpander"] {
             display: none !important;
         }
-        
-        /* Asegurar que el fondo sea blanco y sin espacios */
         .main .block-container {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-
-        /* Ocultar cualquier iframe residual (donde suele vivir el botón de manage) */
-        iframe {
-            display: none !important;
+            padding-top: 0rem !important;
         }
     }
     </style>
     """, unsafe_allow_html=True)
+
 if 'carrito' not in st.session_state:
     st.session_state.carrito = []
 if 'ver_recibo' not in st.session_state:
     st.session_state.ver_recibo = False
 
-# --- LÓGICA DE NAVEGACIÓN ---
+# --- PANTALLA DE EDICIÓN ---
 if not st.session_state.ver_recibo:
-    # --- PANTALLA PRINCIPAL ---
     st.title("📊 Auditoría de Stock")
     
+    # NUEVO: Campo para el nombre
+    nombre_empleado = st.text_input("Nombre del Responsable / Empleado:", placeholder="Ej: Juan Pérez")
+    st.session_state.nombre_responsable = nombre_empleado
+
     with st.expander("➕ Cargar Nuevo Artículo", expanded=True):
         col1, col2, col3 = st.columns([2, 1, 1])
         codigo = col1.text_input("Código del Artículo:").strip()
@@ -340,89 +312,44 @@ if not st.session_state.ver_recibo:
                 }
                 st.session_state.carrito.append(nuevo_item)
                 st.rerun()
-            else:
-                st.error("Código inexistente")
 
     if st.session_state.carrito:
-        df = pd.DataFrame(st.session_state.carrito)
-        
         st.subheader("📝 Planilla de Faltantes")
-        st.data_editor(
-            df,
-            column_config={
-                "Precio Unit.": st.column_config.NumberColumn(format="$ %.2f"),
-                "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
-            },
-            disabled=["Código", "Descripción", "Precio Unit.", "Subtotal"],
-            hide_index=True,
-            use_container_width=True,
-            key="editor"
-        )
-
-        st.divider()
-        c1, c2, c3 = st.columns(3)
+        st.table(pd.DataFrame(st.session_state.carrito)) # Vista simple
         
-        if c1.button("🗑️ Limpiar Todo"):
-            st.session_state.carrito = []
-            st.rerun()
-
-        df_excel = pd.DataFrame(st.session_state.carrito)
-        csv = df_excel.to_csv(index=False, sep=';', decimal=',', encoding='utf-8-sig').encode('utf-8-sig')
-        
-        c2.download_button(
-            label="💾 Exportar para Excel",
-            data=csv,
-            file_name=f"auditoria_{datetime.now().strftime('%d_%m_%Y')}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
-
-        if c3.button("🚀 Ver Notificación Final", use_container_width=True):
+        if st.button("🚀 Generar Notificación Final"):
             st.session_state.ver_recibo = True
             st.rerun()
-    else:
-        st.info("Ingrese un código de producto para comenzar la planilla.")
 
+# --- PANTALLA DE IMPRESIÓN (RECIBO) ---
 else:
-    # --- PANTALLA DE VISTA PREVIA (SIMULANDO NUEVA HOJA) ---
     if st.button("⬅️ Volver a la Edición"):
         st.session_state.ver_recibo = False
         st.rerun()
 
-    st.markdown("<hr>", unsafe_allow_html=True)
-    
-    # Contenedor para impresión
     st.markdown("<h2 style='text-align: center;'>NOTIFICACIÓN DE AUDITORÍA</h2>", unsafe_allow_html=True)
     
-    total_final = sum(item['Subtotal'] for item in st.session_state.carrito)
+    # FECHA A LA DERECHA
+    st.markdown(f"<p style='text-align: right;'><b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y')}</p>", unsafe_allow_html=True)
+
+    # AQUÍ SE MUESTRA EL NOMBRE QUE MARCASTE EN ROJO
+    nombre = st.session_state.get('nombre_responsable', '____________________')
+    st.markdown(f"### Responsable: {nombre}")
     
-    col_f1, col_f2 = st.columns([3, 1])
-    col_f2.write(f"**Fecha:** {datetime.now().strftime('%d/%m/%Y')}")
+    st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría ha arrojado un faltante de herramientas, que serán descontados de su liquidación final.")
     
-    st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría ha arrojado un faltante de herramientas por un valor de **${total_final:,.2f}**, que serán descontados de su liquidación final.")
-    
-    # Tabla limpia para impresión
+    # TABLA
     df_imprimir = pd.DataFrame(st.session_state.carrito)[["Código", "Descripción", "Cantidad", "Subtotal"]]
     st.table(df_imprimir.style.format({"Subtotal": "${:,.2f}"}))
     
+    total_final = sum(item['Subtotal'] for item in st.session_state.carrito)
     st.markdown(f"<h3 style='text-align: right;'>TOTAL A CARGO: ${total_final:,.2f}</h3>", unsafe_allow_html=True)
     
+    # FIRMAS
     st.write("\n" * 3)
-    col_firma1, col_firma2 = st.columns(2)
-    
-    with col_firma1:
-        st.write(" \n" * 4)
-        st.write("__________________________________________")
-        st.write("**FIRMA DEL RESPONSABLE**")
-        st.write("Aclaración: _______________________________")
-        st.write("DNI: ______________________________________")
-
-    with col_firma2:
-        st.write(" \n" * 4)
-        st.write("__________________________________________")
-        st.write("**FIRMA DEL AUDITOR**")
-        st.write("Aclaración: _______________________________")
-        st.write("DNI: ______________________________________")
-    
-    st.write("\n" * 2)
+    col_f1, col_f2 = st.columns(2)
+    with col_f1:
+        st.write(" \n" * 3 + "__________________________\n**FIRMA RESPONSABLE**")
+    with col_f2:
+        st.write(" \n" * 3 + "__________________________\n**FIRMA AUDITOR**")
     

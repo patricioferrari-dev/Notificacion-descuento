@@ -335,64 +335,40 @@ if st.session_state.carrito:
     if c3.button("🚀 Vista Previa para Imprimir", use_container_width=True):
         st.session_state.ver_recibo = True
 
-    # --- VISTA DE IMPRESIÓN (RECIBO FORMAL) ---
+    # --- VISTA PREVIA SENCILLA PARA IMPRIMIR ---
     if st.session_state.ver_recibo:
         st.divider()
-        fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
         
-        # Construcción de filas siguiendo el orden: CÓDIGO | DESCRIPCIÓN | CANT | VALOR
-        filas_html = ""
-        for _, row in df.iterrows():
-            filas_html += f"""
-            <tr>
-                <td style="border-bottom: 1px solid #eee; padding: 8px;">{row['Código']}</td>
-                <td style="border-bottom: 1px solid #eee; padding: 8px;">{row['Descripción']}</td>
-                <td style="border-bottom: 1px solid #eee; padding: 8px; text-align: center;">{row['Cantidad']}</td>
-                <td style="border-bottom: 1px solid #eee; padding: 8px; text-align: right;">${row['Subtotal']:,.2f}</td>
-            </tr>
-            """
-
-        # Diseño del documento
-        recibo_html = f"""
-        <div style="background-color: white; color: black; padding: 30px; border: 1px solid #ddd; font-family: sans-serif;">
-            <h2 style="text-align: center; margin-bottom: 0;">NOTIFICACIÓN DE AUDITORÍA</h2>
-            <hr style="border: 1px solid black;">
-            <p style="text-align: right;"><b>Fecha:</b> {fecha_actual}</p>
-            
-            <p>Se informa que tras la auditoría realizada, se ha detectado un faltante por un valor total de 
-            <b>${total_final:,.2f}</b>, el cual será descontado de su liquidación.</p>
-            
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                <thead>
-                    <tr style="background-color: #f2f2f2;">
-                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">CÓDIGO</th>
-                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">DESCRIPCIÓN</th>
-                        <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">CANT</th>
-                        <th style="border: 1px solid #ccc; padding: 8px; text-align: right;">VALOR</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filas_html}
-                </tbody>
-            </table>
-            
-            <div style="text-align: right; margin-top: 20px;">
-                <h3 style="margin: 0;">TOTAL A CARGO: ${total_final:,.2f}</h3>
-            </div>
-            
-            <div style="margin-top: 80px; text-align: center;">
+        # Título y Fecha
+        st.header("NOTIFICACIÓN DE AUDITORÍA")
+        col_fecha1, col_fecha2 = st.columns([3, 1])
+        col_fecha2.write(f"**Fecha:** {datetime.now().strftime('%d/%m/%Y')}")
+        
+        st.write(f"Se informa que se ha detectado un faltante de herramientas por un valor de **${total_final:,.2f}**, el cual será descontado de su liquidación final.")
+        
+        # Mostramos la tabla limpia (Ordenada: Código, Descripción, Cantidad, Subtotal)
+        # Reordenamos las columnas para que queden como pediste
+        df_imprimir = df[["Código", "Descripción", "Cantidad", "Subtotal"]]
+        
+        # st.table genera una tabla estática, blanca y perfecta para imprimir
+        st.table(df_imprimir.style.format({"Subtotal": "${:,.2f}"}))
+        
+        # Total al final
+        st.markdown(f"<h3 style='text-align: right;'>TOTAL A CARGO: ${total_final:,.2f}</h3>", unsafe_allow_html=True)
+        
+        # Espacio para firma
+        st.write("\n" * 4) # Espacio en blanco
+        st.markdown("""
+            <div style="text-align: center;">
                 <p>__________________________________________</p>
                 <p><b>FIRMA DEL RESPONSABLE</b></p>
             </div>
-        </div>
-        """
+        """, unsafe_allow_html=True)
         
-        st.markdown(recibo_html, unsafe_allow_html=True)
-        st.info("💡 Tip: Presiona **Ctrl + P** para imprimir esta página o guardarla como PDF.")
-        
+        st.info("💡 Para imprimir: Haz clic derecho en cualquier parte blanca -> Imprimir (o Ctrl+P)")
+
         if st.button("❌ Cerrar Vista Previa"):
             st.session_state.ver_recibo = False
             st.rerun()
-
 else:
     st.info("Ingrese un código de producto para comenzar la planilla.")

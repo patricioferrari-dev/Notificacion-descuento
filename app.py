@@ -278,113 +278,110 @@ if 'carrito' not in st.session_state:
 if 'ver_recibo' not in st.session_state:
     st.session_state.ver_recibo = False
 
-st.title("📊 Auditoría de Stock")
-
-# --- CARGA DE DATOS ---
-with st.expander("➕ Cargar Nuevo Artículo", expanded=not st.session_state.ver_recibo):
-    col1, col2, col3 = st.columns([2, 1, 1])
-    codigo = col1.text_input("Código del Artículo:").strip()
-    cantidad = col2.number_input("Cantidad:", min_value=1, value=1)
+# --- LÓGICA DE NAVEGACIÓN ---
+if not st.session_state.ver_recibo:
+    # --- PANTALLA PRINCIPAL ---
+    st.title("📊 Auditoría de Stock")
     
-    if col3.button("Añadir a Planilla", use_container_width=True):
-        if codigo in productos:
-            nuevo_item = {
-                "Código": codigo,
-                "Descripción": productos[codigo]["desc"],
-                "Cantidad": cantidad,
-                "Precio Unit.": productos[codigo]["precio"],
-                "Subtotal": productos[codigo]["precio"] * cantidad
-            }
-            st.session_state.carrito.append(nuevo_item)
-            st.session_state.ver_recibo = False
+    with st.expander("➕ Cargar Nuevo Artículo", expanded=True):
+        col1, col2, col3 = st.columns([2, 1, 1])
+        codigo = col1.text_input("Código del Artículo:").strip()
+        cantidad = col2.number_input("Cantidad:", min_value=1, value=1)
+        
+        if col3.button("Añadir a Planilla", use_container_width=True):
+            if codigo in productos:
+                nuevo_item = {
+                    "Código": codigo,
+                    "Descripción": productos[codigo]["desc"],
+                    "Cantidad": cantidad,
+                    "Precio Unit.": productos[codigo]["precio"],
+                    "Subtotal": productos[codigo]["precio"] * cantidad
+                }
+                st.session_state.carrito.append(nuevo_item)
+                st.rerun()
+            else:
+                st.error("Código inexistente")
+
+    if st.session_state.carrito:
+        df = pd.DataFrame(st.session_state.carrito)
+        
+        st.subheader("📝 Planilla de Faltantes")
+        st.data_editor(
+            df,
+            column_config={
+                "Precio Unit.": st.column_config.NumberColumn(format="$ %.2f"),
+                "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
+            },
+            disabled=["Código", "Descripción", "Precio Unit.", "Subtotal"],
+            hide_index=True,
+            use_container_width=True,
+            key="editor"
+        )
+
+        st.divider()
+        c1, c2, c3 = st.columns(3)
+        
+        if c1.button("🗑️ Limpiar Todo"):
+            st.session_state.carrito = []
             st.rerun()
-        else:
-            st.error("Código inexistente")
 
-# --- TABLA DE EDICIÓN ---
-if st.session_state.carrito:
-    df = pd.DataFrame(st.session_state.carrito)
-    
-    st.subheader("📝 Planilla de Faltantes")
-    st.data_editor(
-        df,
-        column_config={
-            "Precio Unit.": st.column_config.NumberColumn(format="$ %.2f"),
-            "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
-        },
-        disabled=["Código", "Descripción", "Precio Unit.", "Subtotal"],
-        hide_index=True,
-        use_container_width=True,
-        key="editor"
-    )
+        df_excel = pd.DataFrame(st.session_state.carrito)
+        csv = df_excel.to_csv(index=False, sep=';', decimal=',', encoding='utf-8-sig').encode('utf-8-sig')
+        
+        c2.download_button(
+            label="💾 Exportar para Excel",
+            data=csv,
+            file_name=f"auditoria_{datetime.now().strftime('%d_%m_%Y')}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
 
-    total_final = df["Subtotal"].sum()
+        if c3.button("🚀 Ver Notificación Final", use_container_width=True):
+            st.session_state.ver_recibo = True
+            st.rerun()
+    else:
+        st.info("Ingrese un código de producto para comenzar la planilla.")
 
-    # --- BOTONES DE ACCIÓN ---
-    st.divider()
-    c1, c2, c3 = st.columns(3)
-    
-    if c1.button("🗑️ Limpiar Todo"):
-        st.session_state.carrito = []
+else:
+    # --- PANTALLA DE VISTA PREVIA (SIMULANDO NUEVA HOJA) ---
+    if st.button("⬅️ Volver a la Edición"):
         st.session_state.ver_recibo = False
         st.rerun()
 
-    # --- EXPORTACIÓN PARA EXCEL (Corregida) ---
-    df_excel = pd.DataFrame(st.session_state.carrito)
-    # Usamos punto y coma (;) para que Excel en español lo separe en columnas automáticamente
-    csv = df_excel.to_csv(index=False, sep=';', decimal=',', encoding='utf-8-sig').encode('utf-8-sig')
+    st.markdown("<hr>", unsafe_allow_html=True)
     
-    c2.download_button(
-        label="💾 Exportar para Excel",
-        data=csv,
-        file_name=f"auditoria_{datetime.now().strftime('%d_%m_%Y')}.csv",
-        mime="text/csv",
-        use_container_width=True
-    )
+    # Contenedor para impresión
+    st.markdown("<h2 style='text-align: center;'>NOTIFICACIÓN DE AUDITORÍA</h2>", unsafe_allow_html=True)
+    
+    total_final = sum(item['Subtotal'] for item in st.session_state.carrito)
+    
+    col_f1, col_f2 = st.columns([3, 1])
+    col_f2.write(f"**Fecha:** {datetime.now().strftime('%d/%m/%Y')}")
+    
+    st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría ha arrojado un faltante de herramientas por un valor de **${total_final:,.2f}**, que serán descontados de su liquidación final.")
+    
+    # Tabla limpia para impresión
+    df_imprimir = pd.DataFrame(st.session_state.carrito)[["Código", "Descripción", "Cantidad", "Subtotal"]]
+    st.table(df_imprimir.style.format({"Subtotal": "${:,.2f}"}))
+    
+    st.markdown(f"<h3 style='text-align: right;'>TOTAL A CARGO: ${total_final:,.2f}</h3>", unsafe_allow_html=True)
+    
+    st.write("\n" * 3)
+    col_firma1, col_firma2 = st.columns(2)
+    
+    with col_firma1:
+        st.write(" \n" * 4)
+        st.write("__________________________________________")
+        st.write("**FIRMA DEL RESPONSABLE**")
+        st.write("Aclaración: _______________________________")
+        st.write("DNI: ______________________________________")
 
-    if c3.button("🚀 Vista Previa para Imprimir", use_container_width=True):
-        st.session_state.ver_recibo = True
-
-    # --- VISTA PREVIA (Sin códigos raros y con firmas al lado) ---
-    if st.session_state.ver_recibo:
-        st.divider()
-        
-        st.markdown("<h2 style='text-align: center;'>NOTIFICACIÓN DE AUDITORÍA</h2>", unsafe_allow_html=True)
-        
-        col_f1, col_f2 = st.columns([3, 1])
-        col_f2.write(f"**Fecha:** {datetime.now().strftime('%d/%m/%Y')}")
-        
-        st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría ha arrojado un faltante de herramientas por un valor de **${total_final:,.2f}**, que serán descontados de su liquidación final.")
-        
-        # Tabla limpia y profesional
-        df_imprimir = df_excel[["Código", "Descripción", "Cantidad", "Subtotal"]]
-        st.table(df_imprimir.style.format({"Subtotal": "${:,.2f}"}))
-        
-        st.markdown(f"<h3 style='text-align: right;'>TOTAL A CARGO: ${total_final:,.2f}</h3>", unsafe_allow_html=True)
-        
-        # --- SECCIÓN DE FIRMAS (Una al lado de la otra) ---
-        st.write("\n" * 3)
-        col_firma1, col_firma2 = st.columns(2)
-        
-        with col_firma1:
-            st.write(" \n" * 4) # Espacio para la firma manual
-            st.write("__________________________________________")
-            st.write("**FIRMA DEL RESPONSABLE**")
-            st.write("Aclaración: _______________________________")
-            st.write("DNI: ______________________________________")
-
-        with col_firma2:
-            st.write(" \n" * 4)
-            st.write("__________________________________________")
-            st.write("**FIRMA DEL AUDITOR**")
-            st.write("Aclaración: _______________________________")
-            st.write("DNI: ______________________________________")
-        
-        st.write("\n" * 2)
-        st.info("💡 **Consejo de impresión:** Presiona Ctrl+P. En 'Más ajustes', activa la casilla 'Gráficos de fondo' para que la tabla se vea profesional.")
-
-        if st.button("❌ Cerrar Vista Previa"):
-            st.session_state.ver_recibo = False
-            st.rerun()
-else:
-    st.info("Ingrese un código de producto para comenzar la planilla.")
+    with col_firma2:
+        st.write(" \n" * 4)
+        st.write("__________________________________________")
+        st.write("**FIRMA DEL AUDITOR**")
+        st.write("Aclaración: _______________________________")
+        st.write("DNI: ______________________________________")
+    
+    st.write("\n" * 2)
+    st.info("💡 **Para imprimir o guardar como PDF:** Presiona **Ctrl+P**. En el menú de impresión, asegúrate de activar la opción **'Gráficos de fondo'**.")

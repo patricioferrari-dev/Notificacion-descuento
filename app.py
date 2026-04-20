@@ -266,41 +266,31 @@ productos = {
 st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 
 
-# --- CSS PARA LIMPIAR IMPRESIÓN Y OCULTAR INTERFAZ (VERSIÓN RADICAL) ---
+# --- CSS PARA LIMPIAR IMPRESIÓN Y OCULTAR INTERFAZ ---
 st.markdown("""
     <style>
-    /* 1. OCULTAR EN PANTALLA */
+    /* Ocultar elementos en pantalla */
     header, footer, #MainMenu, .stAppDeployButton, .stDeployButton {
         display: none !important;
         visibility: hidden !important;
     }
 
-    /* OCULTAR EL BOTÓN ESPECÍFICO "MANAGE APP" DE STREAMLIT CLOUD */
+    /* Target específico para el botón Manage App de la nube */
     iframe[title="Manage app"], 
     [data-testid="bundle-viewer-button"],
-    .viewerBadge_container__1QSob,
-    .main ._container_gzm9s_1 {
+    .viewerBadge_container__1QSob {
         display: none !important;
     }
 
-    /* 2. REGLAS PARA IMPRESIÓN */
     @media print {
-        /* Forzar ocultamiento de CUALQUIER elemento flotante o iframe */
-        iframe, button, .stButton, [data-testid="stControlItem"] {
+        /* Forzar desaparición de botones e interfaces al imprimir */
+        .stButton, button, .stDownloadButton, [data-testid="stExpander"], iframe {
             display: none !important;
-            height: 0;
-            width: 0;
+            height: 0 !important;
         }
-        
-        /* Eliminar el espacio superior y forzar fondo blanco */
         .main .block-container {
             padding-top: 0rem !important;
             margin: 0 !important;
-        }
-
-        /* Ocultar la barra de estado de carga */
-        [data-testid="stStatusWidget"] {
-            display: none !important;
         }
     }
     </style>
@@ -315,7 +305,6 @@ if 'ver_recibo' not in st.session_state:
 if not st.session_state.ver_recibo:
     st.title("📊 Auditoría de Stock")
     
-    # Campo para el nombre
     nombre_input = st.text_input("Nombre del Responsable / Empleado:", placeholder="Ingrese nombre completo...")
     st.session_state.nombre_responsable = nombre_input
 
@@ -340,8 +329,7 @@ if not st.session_state.ver_recibo:
 
     if st.session_state.carrito:
         st.subheader("📝 Planilla de Faltantes")
-        df_pantalla = pd.DataFrame(st.session_state.carrito)
-        st.table(df_pantalla)
+        st.table(pd.DataFrame(st.session_state.carrito))
         
         col_btn1, col_btn2 = st.columns([1, 4])
         if col_btn1.button("🗑️ Limpiar"):
@@ -352,43 +340,36 @@ if not st.session_state.ver_recibo:
             st.session_state.ver_recibo = True
             st.rerun()
 
-# --- PANTALLA DE IMPRESIÓN (RECIBO) ---
+# --- PANTALLA DE IMPRESIÓN ---
 else:
     if st.button("⬅️ Volver a la Edición"):
         st.session_state.ver_recibo = False
         st.rerun()
 
     st.markdown("<h2 style='text-align: center;'>NOTIFICACIÓN DE AUDITORÍA</h2>", unsafe_allow_html=True)
-    
-    # Fecha a la derecha
     st.markdown(f"<p style='text-align: right;'><b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y')}</p>", unsafe_allow_html=True)
 
-    # Nombre del responsable (donde marcaste en rojo)
     nombre = st.session_state.get('nombre_responsable', '')
     if nombre:
         st.markdown(f"### {nombre.upper()}")
     else:
         st.markdown("### __________________________")
     
-    # Cálculo de total
     total_final = sum(item['Subtotal'] for item in st.session_state.carrito)
     
     st.write(f"Por medio de la presente, el área de Stock le notifica el resultado de la auditoría de inventario respecto a los elementos (equipos, materiales y herramientas) provistos por el establecimiento. Se ha detectado un faltante total de **${total_final:,.2f}**, el cual será deducido de su liquidación final de haberes.")
     
-    # Tabla de artículos
     df_imprimir = pd.DataFrame(st.session_state.carrito)[["Código", "Descripción", "Cantidad", "Subtotal"]]
     st.table(df_imprimir.style.format({"Subtotal": "${:,.2f}"}))
     
     st.markdown(f"<h3 style='text-align: right;'>TOTAL A CARGO: ${total_final:,.2f}</h3>", unsafe_allow_html=True)
     
-    # Espacio para firmas
     st.write("\n" * 3)
     col_f1, col_f2 = st.columns(2)
     with col_f1:
         st.write(" \n" * 4 + "__________________________\n**FIRMA RESPONSABLE**")
-        st.write("Aclaración: _________________")
+        st.write(f"Aclaración: {nombre.upper()}")
         st.write("DNI: _________________")
     with col_f2:
         st.write(" \n" * 4 + "__________________________\n**FIRMA AUDITOR**")
         st.write("Aclaración: _________________")
-            

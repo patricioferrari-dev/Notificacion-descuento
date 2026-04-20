@@ -265,46 +265,50 @@ productos = {
 
 st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 
-# --- ELIMINACIÓN TOTAL DE INTERFAZ (MANAGE APP Y OTROS) ---
+# --- ELIMINACIÓN RADICAL DE INTERFAZ (MANAGE APP Y OTROS) ---
 st.markdown("""
     <style>
-    /* 1. OCULTAR BOTÓN MANAGE APP (TODAS LAS VARIANTES POSIBLES) */
-    .stAppDeployButton {
+    /* 1. OCULTAR BOTÓN NEGRO 'MANAGE APP' Y DESPLEGABLES */
+    /* Ataca el botón por su clase, su posición y su contenedor */
+    div[data-testid="stStatusWidget"], 
+    .stDeployButton, 
+    .stAppDeployButton, 
+    header, 
+    footer, 
+    #MainMenu, 
+    #stDecoration {
         display: none !important;
+        visibility: hidden !important;
     }
-    iframe[title="Manage app"] {
-        display: none !important;
-    }
-    div[data-testid="bundle-viewer-button"] {
-        display: none !important;
-    }
-    /* Este selector apunta al botón negro flotante específico */
-    button[data-testid="stBaseButton-element"] {
-        display: none !important;
-    }
-    /* Oculta el contenedor inferior derecho por completo */
-    div.stDeployButton {
+
+    /* OCULTAR EL BOTÓN ESPECÍFICO DE LA ESQUINA INFERIOR DERECHA */
+    button[title="Manage app"], 
+    iframe[title="Manage app"], 
+    div.stActionButton {
         display: none !important;
     }
 
-    /* 2. OCULTAR DECORACIÓN Y FOOTER */
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
-    #stDecoration {display: none !important;}
-
-    /* 3. AJUSTE DE ESPACIO SUPERIOR */
+    /* ELIMINAR EL MARGEN QUE DEJA LA BARRA SUPERIOR */
     .main .block-container {
-        padding-top: 1rem !important;
+        padding-top: 0rem !important;
+        margin-top: -3rem !important;
     }
 
-    /* 4. REGLAS PARA IMPRESIÓN LIMPIA */
+    /* 2. REGLAS EXCLUSIVAS PARA IMPRESIÓN */
     @media print {
-        .stButton, button, .stAppDeployButton {
+        /* Ocultar ABSOLUTAMENTE TODO lo que no sea el contenido */
+        .stButton, button, .stDownloadButton {
             display: none !important;
         }
-        /* Forzar que no aparezca nada de Streamlit */
-        iframe, .stDeployButton {
+        
+        /* Asegurar que el fondo sea blanco y sin espacios */
+        .main .block-container {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Ocultar cualquier iframe residual (donde suele vivir el botón de manage) */
+        iframe {
             display: none !important;
         }
     }

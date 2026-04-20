@@ -265,40 +265,38 @@ productos = {
 
 st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 
-# --- OCULTAR ELEMENTOS DE INTERFAZ Y AJUSTE DE IMPRESIÓN ---
+# --- OCULTAR ELEMENTOS DE INTERFAZ TOTAL ---
 st.markdown("""
     <style>
-    /* Ocultar elementos de Streamlit en pantalla */
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
+    /* 1. Ocultar el botón 'Manage App' y otros elementos flotantes de Streamlit */
+    iframe[title="Manage app"] {display: none !important;}
     .stAppDeployButton {display: none !important;}
-    div[data-testid="stStatusWidget"] {display: none !important;}
+    #stDecoration {display: none !important;}
+    [data-testid="stStatusWidget"] {display: none !important;}
+    header {visibility: hidden; height: 0;}
+    footer {visibility: hidden;}
     
-    /* Ajuste de márgenes para que no quede espacio vacío arriba */
+    /* 2. Quitar el espacio en blanco superior de la página */
     .main .block-container {
-        padding-top: 1rem !important;
+        padding-top: 0rem !important;
+        margin-top: -2rem !important;
     }
 
+    /* 3. Reglas exclusivas para cuando el usuario imprime (Ctrl + P) */
     @media print {
-        /* Ocultar botones y cualquier elemento de navegación al imprimir */
-        .stButton, button, [data-testid="stExpander"] {
+        /* Ocultar botones de navegación (Volver, etc.) */
+        .stButton, button {
             display: none !important;
         }
         
-        /* Forzar que el fondo y las tablas se vean bien */
-        body {
-            background-color: white !important;
-        }
-
-        /* Eliminar el botón "Volver a la edición" específicamente */
-        section[data-testid="stSidebar"] {display: none;}
-        
-        /* Quitar espacios extra de Streamlit para la hoja física */
+        /* Asegurar que la hoja no tenga márgenes raros */
         .main .block-container {
             padding: 0 !important;
             margin: 0 !important;
         }
+
+        /* Ocultar cualquier línea divisoria o expander que no deba imprimirse */
+        hr { margin: 1em 0 !important; }
     }
     </style>
     """, unsafe_allow_html=True)

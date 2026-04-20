@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from datetime import datetime
 
 # --- BASE DE DATOS ---
@@ -270,92 +271,80 @@ productos = {
     "TALUMI": {"desc": "TALADRO PERCUTOR UMI 550W", "precio": 70000.00}
 }
 
-# --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="Sistema de Stock", layout="wide")
+st.set_page_config(page_title="Auditoría Estilo Excel", layout="wide")
 
-if 'lista_carga' not in st.session_state:
-    st.session_state.lista_carga = []
+if 'carrito' not in st.session_state:
+    st.session_state.carrito = []
 
-st.title("📋 Gestión de Artículos")
+st.title("📊 Auditoría de Stock - Formato Planilla")
 
-# --- SECCIÓN DE CARGA ---
-col1, col2 = st.columns([1, 2])
-
-with col1:
-    st.subheader("Cargar Artículo")
-    codigo_input = st.text_input("Código:").strip()
-    cantidad_input = st.number_input("Cantidad:", min_value=1, value=1, step=1)
+# --- ENTRADA DE DATOS ---
+with st.expander("➕ Cargar Nuevo Artículo", expanded=True):
+    col1, col2, col3 = st.columns([2, 1, 1])
+    codigo = col1.text_input("Código del Artículo:").strip()
+    cantidad = col2.number_input("Cantidad:", min_value=1, value=1)
     
-    if st.button("➕ Agregar"):
-        if codigo_input in productos:
-            item = productos[codigo_input].copy()
-            item['codigo'] = codigo_input
-            item['cantidad'] = cantidad_input
-            item['subtotal'] = item['precio'] * cantidad_input
-            st.session_state.lista_carga.append(item)
-            st.success(f"Agregado: {item['desc']}")
-        else:
-            st.error("Código no encontrado.")
-
-# --- SECCIÓN DE RESUMEN ---
-st.divider()
-st.subheader("📝 Resumen de Carga")
-
-total_final = 0
-if st.session_state.lista_carga:
-    for i, item in enumerate(st.session_state.lista_carga):
-        c1, c2, c3, c4, c5 = st.columns([1, 3, 1, 1, 0.5])
-        c1.write(f"{item['cantidad']}")
-        c2.write(f"**{item['desc']}**")
-        c3.write(f"${item['precio']:,.2f}")
-        c4.write(f"**${item['subtotal']:,.2f}**")
-        total_final += item['subtotal']
-        if c5.button("❌", key=f"del_{i}"):
-            st.session_state.lista_carga.pop(i)
+    if col3.button("Añadir a Planilla", use_container_width=True):
+        if codigo in productos:
+            nuevo_item = {
+                "Código": codigo,
+                "Descripción": productos[codigo]["desc"],
+                "Cantidad": cantidad,
+                "Precio Unit.": productos[codigo]["precio"],
+                "Subtotal": productos[codigo]["precio"] * cantidad
+            }
+            st.session_state.carrito.append(nuevo_item)
             st.rerun()
+        else:
+            st.error("Código inexistente")
 
-    st.markdown(f"### TOTAL: ${total_final:,.2f}")
+# --- VISTA TIPO EXCEL ---
+st.subheader("📝 Planilla de Faltantes")
 
-    # --- GENERAR RECIBO ---
-    if st.button("🚀 Generar Recibo de Auditoría"):
-        ahora = datetime.now()
-        fecha_str = ahora.strftime("%d/%m/%Y %H:%M")
+if st.session_state.carrito:
+    # Convertimos la lista a un DataFrame de Pandas (el motor de Excel en Python)
+    df = pd.DataFrame(st.session_state.carrito)
+    
+    # Configuramos el editor para que parezca Excel
+    df_editado = st.data_editor(
+        df,
+        column_config={
+            "Precio Unit.": st.column_config.NumberColumn(format="$ %.2f"),
+            "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
+            "Cantidad": st.column_config.NumberColumn(step=1),
+        },
+        disabled=["Código", "Descripción", "Subtotal"], # Solo dejamos editar cantidad si quisieras
+        hide_index=True,
+        use_container_width=True,
+        key="planilla_editor"
+    )
 
-        filas_html = ""
-        for item in st.session_state.lista_carga:
-            filas_html += f"""
-            <tr>
-                <td style='text-align:center; border-bottom: 1px dashed #ddd; padding: 5px;'>{item['cantidad']}</td>
-                <td style='border-bottom: 1px dashed #ddd; padding: 5px;'>{item['codigo']}<br><small>{item['desc'][:35]}</small></td>
-                <td style='text-align:right; border-bottom: 1px dashed #ddd; padding: 5px;'>${item['subtotal']:,.2f}</td>
-            </tr>"""
+    # Recalcular Total
+    total_final = df["Subtotal"].sum()
 
-        recibo_html = f"""
-        <div style="background-color: white; max-width: 500px; margin: auto; padding: 30px; border: 1px solid #ccc; font-family: 'Courier New', Courier, monospace; color: #333; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);">
-            <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px;">
-                <h2 style="margin: 0;">AUDITORÍA DE STOCK</h2>
-                <small>Comprobante de Faltante</small>
+    col_t1, col_t2 = st.columns([3, 1])
+    with col_t2:
+        st.markdown(f"""
+            <div style="border: 2px solid #2e7d32; padding: 10px; border-radius: 5px; text-align: center; background-color: #f1f8e9;">
+                <span style="color: #666; font-size: 14px;">TOTAL GENERAL</span><br>
+                <b style="font-size: 24px; color: #1b5e20;">${total_final:,.2f}</b>
             </div>
-            <p style="text-align: right; font-size: 12px; margin-top: 10px;"><b>FECHA:</b> {fecha_str}</p>
-            <p style="font-size: 14px; font-family: sans-serif; line-height: 1.4; text-align: justify;">
-                Se informa el resultado de la auditoría sobre equipos y herramientas. 
-                El total faltante de <b>${total_final:,.2f}</b> será descontado de su liquidación.
-            </p>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px;">
-                <tr style="border-bottom: 2px solid #333;">
-                    <th>CANT</th><th style="text-align:left;">DETALLE</th><th style="text-align:right;">SUBTOTAL</th>
-                </tr>
-                {filas_html}
-            </table>
-            <h3 style="text-align: right; border-top: 2px solid #333; padding-top: 10px;">TOTAL: ${total_final:,.2f}</h3>
-            <div style="margin-top: 40px; text-align: center; font-size: 12px;">
-                <p>_________________________________</p>
-                <b>FIRMA RESPONSABLE</b>
-            </div>
-        </div>"""
-        
-        st.markdown(recibo_html, unsafe_allow_html=True)
-        
-        # Botón de descarga TXT
-        txt_data = f"RECIBO AUDITORIA - {fecha_str}\nTOTAL: ${total_final:,.2f}"
-        st.download_button("📥 Descargar Registro", txt_data, "recibo.txt")
+        """, unsafe_allow_html=True)
+
+    # --- ACCIONES ---
+    st.divider()
+    c1, c2, c3 = st.columns(3)
+    
+    if c1.button("🗑️ Limpiar Planilla"):
+        st.session_state.carrito = []
+        st.rerun()
+
+    if c2.button("💾 Exportar a Excel (CSV)"):
+        csv = df.to_csv(index=False).encode('utf-8')
+        st.download_button("Descargar Archivo", csv, "auditoria.csv", "text/csv")
+
+    if c3.button("🚀 Generar Recibo Formal"):
+        # Aquí puedes mantener tu diseño de recibo HTML anterior
+        st.info("Generando vista de impresión...")
+else:
+    st.info("La planilla está vacía. Ingrese un código arriba.")

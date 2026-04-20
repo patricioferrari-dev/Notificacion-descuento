@@ -337,43 +337,78 @@ if st.session_state.carrito:
     st.divider()
     c1, c2, c3 = st.columns(3)
     
-    if c1.button("🗑️ Limpiar Planilla", use_container_width=True):
+    if c1.button("🗑️ Limpiar Planilla"):
         st.session_state.carrito = []
-        st.session_state.mostrar_recibo = False
         st.rerun()
 
-    if c2.button("💾 Exportar a CSV", use_container_width=True):
-        csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button("Click para Descargar", csv, "auditoria.csv", "text/csv")
+    # Opción de descarga directa
+    csv = df.to_csv(index=False).encode('utf-8-sig') # utf-8-sig para que Excel lo abra bien
+    c2.download_button("💾 Exportar a Excel", csv, "auditoria.csv", "text/csv", use_container_width=True)
 
-    if c3.button("🚀 Generar Vista de Impresión", use_container_width=True):
-        st.session_state.mostrar_recibo = True
+    # Lógica para mostrar el recibo
+    if "ver_recibo" not in st.session_state:
+        st.session_state.ver_recibo = False
 
-    # --- LÓGICA DE LA VISTA PREVIA TIPO EXCEL ---
-    if st.session_state.mostrar_recibo:
-        st.divider()
-        st.subheader("🖼️ Vista Previa de Planilla")
-        
-        # Usamos st.dataframe para una vista estática pero con estilo Excel
-        # A diferencia del editor, esta es más limpia para "solo lectura"
-        st.dataframe(
-            df,
-            column_config={
-                "Precio Unit.": st.column_config.NumberColumn(format="$ %.2f"),
-                "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
-            },
-            hide_index=True,
-            use_container_width=True
-        )
-        
-        # Resumen final simple
-        c_res1, c_res2 = st.columns([3, 1])
-        fecha_str = datetime.now().strftime("%d/%m/%Y %H:%M")
-        
-        c_res1.write(f"**Fecha de reporte:** {fecha_str}")
-        c_res2.metric("TOTAL A DESCONTAR", f"${total_final:,.2f}")
+    if c3.button("🚀 Generar Recibo Formal", use_container_width=True):
+        st.session_state.ver_recibo = True
 
-        st.warning("👉 Para imprimir: Usa la opción de 'Exportar a CSV' y ábrelo en Excel para darle el formato final de impresión.")
+    # --- VISTA DEL RECIBO FORMAL (EL DISEÑO DE LA FOTO) ---
+    if st.session_state.ver_recibo:
+        st.markdown("---")
+        fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
+        
+        # Construimos las filas de la tabla dinámicamente
+        filas_html = ""
+        for _, row in df.iterrows():
+            filas_html += f"""
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">{row['Cantidad']}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{row['Código']} - {row['Descripción']}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align:right;">${row['Subtotal']:,.2f}</td>
+            </tr>
+            """
+
+        # El contenedor principal del recibo
+        recibo_html = f"""
+        <div style="background-color: white; padding: 30px; border: 1px solid #ccc; border-radius: 10px; color: black; font-family: sans-serif;">
+            <h1 style="text-align: center; color: #1e3d59; margin-bottom: 0;">AUDITORÍA DE STOCK</h1>
+            <hr style="border: 1px solid #1e3d59;">
+            <p style="text-align: right;"><b>FECHA:</b> {fecha_actual}</p>
+            
+            <p>Me dirijo a usted desde el área de Stock a los fines de informarle que 
+            el resultado de auditoría ha arrojado un faltante de herramientas de 
+            <b>${total_final:,.2f}</b>, que serán descontados de su liquidación final.</p>
+            
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead>
+                    <tr style="background-color: #f2f2f2;">
+                        <th style="border: 1px solid #ddd; padding: 8px;">CANT</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">DETALLE</th>
+                        <th style="border: 1px solid #ddd; padding: 8px;">SUBTOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {filas_html}
+                </tbody>
+            </table>
+            
+            <div style="margin-top: 30px; text-align: right;">
+                <h3 style="margin:0;">TOTAL A CARGO: ${total_final:,.2f}</h3>
+            </div>
+            
+            <div style="margin-top: 60px; text-align: center;">
+                <p>__________________________________________</p>
+                <b>FIRMA DEL RESPONSABLE</b>
+            </div>
+        </div>
+        """
+        
+        st.markdown(recibo_html, unsafe_allow_html=True)
+        
+        # Botón para cerrar la vista
+        if st.button("❌ Cerrar Vista Previa"):
+            st.session_state.ver_recibo = False
+            st.rerun()
 
 else:
     st.info("La planilla está vacía. Ingrese un código arriba.")

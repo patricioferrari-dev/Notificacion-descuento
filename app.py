@@ -268,16 +268,26 @@ st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 # --- CSS PARA LIMPIAR IMPRESIÓN Y OCULTAR INTERFAZ ---
 st.markdown("""
     <style>
+    /* Ocultar elementos de Streamlit en pantalla */
     header, footer, #MainMenu, .stAppDeployButton, .stDeployButton, iframe[title="Manage app"] {
         display: none !important;
         visibility: hidden !important;
     }
+    
+    /* Ajuste de margen superior */
+    .main .block-container {
+        padding-top: 1rem !important;
+    }
+
     @media print {
-        .stButton, button, .stDownloadButton, [data-testid="stExpander"] {
+        /* Ocultar botones y expanders al imprimir */
+        .stButton, button, .stDownloadButton, [data-testid="stExpander"], .stHeader {
             display: none !important;
         }
+        /* Forzar que el contenido ocupe toda la hoja */
         .main .block-container {
             padding-top: 0rem !important;
+            margin: 0 !important;
         }
     }
     </style>
@@ -292,9 +302,9 @@ if 'ver_recibo' not in st.session_state:
 if not st.session_state.ver_recibo:
     st.title("📊 Auditoría de Stock")
     
-    # NUEVO: Campo para el nombre
-    nombre_empleado = st.text_input("Nombre del Responsable / Empleado:", placeholder="Ej: Juan Pérez")
-    st.session_state.nombre_responsable = nombre_empleado
+    # Campo para el nombre
+    nombre_input = st.text_input("Nombre del Responsable / Empleado:", placeholder="Ingrese nombre completo...")
+    st.session_state.nombre_responsable = nombre_input
 
     with st.expander("➕ Cargar Nuevo Artículo", expanded=True):
         col1, col2, col3 = st.columns([2, 1, 1])
@@ -312,12 +322,20 @@ if not st.session_state.ver_recibo:
                 }
                 st.session_state.carrito.append(nuevo_item)
                 st.rerun()
+            else:
+                st.error("Código no encontrado")
 
     if st.session_state.carrito:
         st.subheader("📝 Planilla de Faltantes")
-        st.table(pd.DataFrame(st.session_state.carrito)) # Vista simple
+        df_pantalla = pd.DataFrame(st.session_state.carrito)
+        st.table(df_pantalla)
         
-        if st.button("🚀 Generar Notificación Final"):
+        col_btn1, col_btn2 = st.columns([1, 4])
+        if col_btn1.button("🗑️ Limpiar"):
+            st.session_state.carrito = []
+            st.rerun()
+        
+        if col_btn2.button("🚀 Generar Notificación Final", use_container_width=True):
             st.session_state.ver_recibo = True
             st.rerun()
 
@@ -329,27 +347,34 @@ else:
 
     st.markdown("<h2 style='text-align: center;'>NOTIFICACIÓN DE AUDITORÍA</h2>", unsafe_allow_html=True)
     
-    # FECHA A LA DERECHA
+    # Fecha a la derecha
     st.markdown(f"<p style='text-align: right;'><b>Fecha:</b> {datetime.now().strftime('%d/%m/%Y')}</p>", unsafe_allow_html=True)
 
-    # AQUÍ SE MUESTRA EL NOMBRE QUE MARCASTE EN ROJO
-    nombre = st.session_state.get('nombre_responsable', '____________________')
-    st.markdown(f"###  {nombre}")
+    # Nombre del responsable (donde marcaste en rojo)
+    nombre = st.session_state.get('nombre_responsable', '')
+    if nombre:
+        st.markdown(f"### Responsable: {nombre.upper()}")
+    else:
+        st.markdown("### Responsable: __________________________")
+    
+    # Cálculo de total
+    total_final = sum(item['Subtotal'] for item in st.session_state.carrito)
     
     st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría ha arrojado un faltante de herramientas por un valor de **${total_final:,.2f}**, que serán descontados de su liquidación final.")
     
-    # TABLA
+    # Tabla de artículos
     df_imprimir = pd.DataFrame(st.session_state.carrito)[["Código", "Descripción", "Cantidad", "Subtotal"]]
     st.table(df_imprimir.style.format({"Subtotal": "${:,.2f}"}))
     
-    total_final = sum(item['Subtotal'] for item in st.session_state.carrito)
     st.markdown(f"<h3 style='text-align: right;'>TOTAL A CARGO: ${total_final:,.2f}</h3>", unsafe_allow_html=True)
     
-    # FIRMAS
+    # Espacio para firmas
     st.write("\n" * 3)
     col_f1, col_f2 = st.columns(2)
     with col_f1:
-        st.write(" \n" * 3 + "__________________________\n**FIRMA RESPONSABLE**")
+        st.write(" \n" * 4 + "__________________________\n**FIRMA RESPONSABLE**")
+        st.write("Aclaración: _________________")
     with col_f2:
-        st.write(" \n" * 3 + "__________________________\n**FIRMA AUDITOR**")
+        st.write(" \n" * 4 + "__________________________\n**FIRMA AUDITOR**")
+        st.write("Aclaración: _________________")
     

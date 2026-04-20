@@ -266,31 +266,45 @@ productos = {
 st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 
 
-# --- CSS PARA LIMPIAR IMPRESIÓN Y OCULTAR INTERFAZ ---
+# --- CSS DEFINITIVO CONTRA RASTROS DE "MANAGE APP" ---
 st.markdown("""
     <style>
-    /* Ocultar elementos en pantalla */
+    /* Ocultar en pantalla */
     header, footer, #MainMenu, .stAppDeployButton, .stDeployButton {
         display: none !important;
         visibility: hidden !important;
     }
 
-    /* Target específico para el botón Manage App de la nube */
+    /* Target agresivo al botón de la nube */
     iframe[title="Manage app"], 
     [data-testid="bundle-viewer-button"],
-    .viewerBadge_container__1QSob {
+    .viewerBadge_container__1QSob,
+    div[class^="viewerBadge_container"] {
         display: none !important;
+        opacity: 0 !important;
     }
 
     @media print {
-        /* Forzar desaparición de botones e interfaces al imprimir */
-        .stButton, button, .stDownloadButton, [data-testid="stExpander"], iframe {
+        /* 1. Ocultar botones y el botón de volver */
+        .stButton, button, [data-testid="stHeader"], .stDownloadButton {
             display: none !important;
-            height: 0 !important;
         }
+        
+        /* 2. FORZAR FONDO BLANCO Y ELIMINAR MÁRGENES DEL NAVEGADOR */
+        @page {
+            margin: 0.5cm; /* Define un margen pequeño y limpio */
+        }
+
+        /* 3. SUBIR TODO EL CONTENIDO PARA PISAR EL PIE DE PÁGINA */
         .main .block-container {
             padding-top: 0rem !important;
-            margin: 0 !important;
+            padding-bottom: 0rem !important;
+            margin-bottom: -50px !important; /* Empuja el contenido hacia abajo para tapar rastros */
+        }
+
+        /* 4. Asegurar que no haya transparencias que dejen ver el fondo */
+        body {
+            background-color: white !important;
         }
     }
     </style>

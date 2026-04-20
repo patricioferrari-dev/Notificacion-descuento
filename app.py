@@ -340,32 +340,41 @@ if st.session_state.carrito:
         st.divider()
         
         # Título y Fecha
-        st.header("NOTIFICACIÓN DE AUDITORÍA")
+        st.markdown("<h2 style='text-align: center;'>NOTIFICACIÓN DE AUDITORÍA</h2>", unsafe_allow_html=True)
+        
         col_fecha1, col_fecha2 = st.columns([3, 1])
         col_fecha2.write(f"**Fecha:** {datetime.now().strftime('%d/%m/%Y')}")
         
-        st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle y entregarle el resultado de auditoria sobre sus equipos, materiales y herramientas que fueron entregados en el establecimiento. El mismo ha arrojado faltantes por un valor de **${total_final:,.2f}**, el cual será descontado de su liquidación final.")
+        st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle y entregarle el resultado de auditoría sobre sus equipos, materiales y herramientas que fueron entregados en el establecimiento. El mismo ha arrojado faltantes por un valor de **${total_final:,.2f}**, el cual será descontado de su liquidación final.")
         
-        # Mostramos la tabla limpia (Ordenada: Código, Descripción, Cantidad, Subtotal)
-        # Reordenamos las columnas para que queden como pediste
+        # Tabla ordenada: Código, Descripción, Cantidad, Subtotal
         df_imprimir = df[["Código", "Descripción", "Cantidad", "Subtotal"]]
-        
-        # st.table genera una tabla estática, blanca y perfecta para imprimir
         st.table(df_imprimir.style.format({"Subtotal": "${:,.2f}"}))
         
         # Total al final
         st.markdown(f"<h3 style='text-align: right;'>TOTAL A CARGO: ${total_final:,.2f}</h3>", unsafe_allow_html=True)
         
-        # Espacio para firma
-        st.write("\n" * 4) # Espacio en blanco
-        st.markdown("""
-            <div style="text-align: center;">
-                <p>__________________________________________</p>
-                <p><b>FIRMA DEL RESPONSABLE</b></p>
-            </div>
-        """, unsafe_allow_html=True)
+        # --- SECCIÓN DE FIRMAS (ESTRUCTURA SENCILLA) ---
+        st.write("\n" * 3) # Espacio para que no quede pegado a la tabla
         
-        st.info("💡 Para imprimir: Haz clic derecho en cualquier parte blanca -> Imprimir (o Ctrl+P)")
+        col_firma1, col_firma2 = st.columns(2)
+        
+        with col_firma1:
+            st.write(" \n" * 4) # Espacio para la firma manual
+            st.write("__________________________________________")
+            st.write("**FIRMA DEL RESPONSABLE**")
+            st.write("Aclaración: _______________________________")
+            st.write("DNI: ______________________________________")
+
+        with col_firma2:
+            st.write(" \n" * 4)
+            st.write("__________________________________________")
+            st.write("**FIRMA DEL AUDITADO**")
+            st.write("Aclaración: _______________________________")
+            st.write("DNI: ______________________________________")
+        
+        st.write("\n" * 2)
+        st.info("💡 **Consejo de impresión:** Presiona Ctrl+P. En 'Más ajustes', activa la casilla 'Gráficos de fondo' para que la tabla se vea profesional.")
 
         if st.button("❌ Cerrar Vista Previa"):
             st.session_state.ver_recibo = False

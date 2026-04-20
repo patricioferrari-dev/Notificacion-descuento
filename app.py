@@ -347,8 +347,7 @@ if st.session_state.carrito:
 
     if c3.button("🚀 Vista Previa para Imprimir", use_container_width=True):
         st.session_state.ver_recibo = True
-    )
-
+    
     if c3.button("🚀 Vista Previa para Imprimir", use_container_width=True):
         st.session_state.ver_recibo = True
 

@@ -332,57 +332,82 @@ if st.session_state.lista_carga:
     st.divider()
     st.markdown(f"### TOTAL A PROCESAR: **${total_final:,.2f}**")
 
-    # --- PROCESAR FINAL (Notificación) ---
-    if st.button("🚀 Generar Notificación Final"):
-        # Obtener fecha y hora actual
-        ahora = datetime.now()
-        fecha_str = ahora.strftime("%d/%m/%Y %H:%M:%S")
+    # --- EN EL BLOQUE DE GENERAR NOTIFICACIÓN ---
+if st.button("🚀 Generar Vista Previa Profesional"):
+    ahora = datetime.now()
+    fecha_str = ahora.strftime("%d/%m/%Y")
 
-        # Texto formal con el monto total insertado automáticamente
-        cuerpo_formal = (
-            f"Me dirijo a usted desde el área de Stock a los fines de informarle y entregarle "
-            f"el resultado de auditoria sobre sus equipos, materiales y herramientas que fueron "
-            f"entregados en el establecimiento. El mismo ha arrojado faltantes por "
-            f" \"${total_final:,.2f}\", que serán descontados de su liquidación final."
-        )
+    # 1. Definimos el cuerpo del mensaje
+    cuerpo_formal = (
+        f"Me dirijo a usted desde el área de Stock a los fines de informarle y entregarle "
+        f"el resultado de auditoría sobre sus equipos, materiales y herramientas que fueron "
+        f"entregados en el establecimiento. El mismo ha arrojado un faltante de herramientas "
+        f"de \"${total_final:,.2f}\", que serán descontados de su liquidación final."
+    )
 
-        # Construcción del contenido del texto
-        texto_resumen = "NOTIFICACIÓN OFICIAL DE AUDITORÍA\n"
-        texto_resumen += f"Fecha de emisión: {fecha_str}\n"
-        texto_resumen += "="*60 + "\n\n"
-        texto_resumen += cuerpo_formal + "\n\n"
-        texto_resumen += "DETALLE DEL FALTANTE:\n"
-        texto_resumen += "-"*60 + "\n"
-        texto_resumen += f"{'CANT':<5} {'CODIGO':<10} {'DESC':<30} {'SUBTOTAL':>12}\n"
-        texto_resumen += "-"*60 + "\n"
-        
-        for item in st.session_state.lista_carga:
-            cant = item.get('cantidad', 1)
-            subt = item.get('subtotal', item['precio'])
-            # Acortamos descripción para que entre en la línea
-            desc_corta = item['desc'][:28]
-            linea = f"{cant:<5} {item['codigo']:<10} {desc_corta:<30} ${subt:>12,.2f}\n"
-            texto_resumen += linea
-            
-        texto_resumen += "-"*60 + "\n"
-        texto_resumen += f"MONTO TOTAL A DESCONTAR: ${total_final:,.2f}\n"
-        texto_resumen += "\nFirma: Área de Stock"
+    # 2. Creamos una versión de texto "dibujada" para que parezca una tabla en el TXT
+    separador = "-" * 70
+    tabla_txt = f"{'CANT':<6} | {'CODIGO':<10} | {'DESCRIPCION':<35} | {'SUBTOTAL':>12}\n"
+    tabla_txt += separador + "\n"
+    for item in st.session_state.lista_carga:
+        cant = item.get('cantidad', 1)
+        subt = item.get('subtotal', item['precio'])
+        desc = item['desc'][:33]
+        tabla_txt += f"{cant:<6} | {item['codigo']:<10} | {desc:<35} | ${subt:>12,.2f}\n"
 
-        # Mostrar en pantalla
-        st.subheader("📄 Notificación Lista")
-        st.text_area("Copiar este texto:", texto_resumen, height=400)
-        
-        # Botón de descarga
+    # 3. Construimos el documento final para descargar
+    documento_final = (
+        f"NOTIFICACIÓN DE AUDITORÍA - ÁREA DE STOCK\n"
+        f"Fecha: {fecha_str}\n\n"
+        f"A quien corresponda:\n\n"
+        f"{cuerpo_formal}\n\n"
+        f"DETALLE DEL FALTANTE:\n"
+        f"{separador}\n"
+        f"{tabla_txt}"
+        f"{separador}\n"
+        f"MONTO TOTAL A DESCONTAR: ${total_final:,.2f}\n\n\n"
+        f"__________________________\n"
+        f"Firma y Aclaración\n"
+        f"Responsable de Stock"
+    )
+
+    # --- MOSTRAR EN PANTALLA ESTILO "HOJA DE WORD" ---
+    st.markdown("---")
+    st.subheader("📄 Vista Previa del Documento")
+    
+    # Usamos HTML/CSS para que parezca una hoja de papel
+    st.markdown(f"""
+        <div style="background-color: white; color: #333; padding: 40px; border-radius: 5px; border: 1px solid #ddd; font-family: 'Arial', sans-serif; box-shadow: 2px 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: right; font-size: 14px;">Buenos Aires, {fecha_str}</div>
+            <div style="text-align: center; font-weight: bold; font-size: 18px; margin-top: 20px;">NOTIFICACIÓN DE AUDITORÍA</div>
+            <div style="margin-top: 30px; font-weight: bold;">A quien corresponda:</div>
+            <div style="margin-top: 15px; line-height: 1.6; text-align: justify;">
+                {cuerpo_formal}
+            </div>
+            <div style="margin-top: 30px; font-weight: bold;">DETALLE:</div>
+            <hr>
+            <pre style="background-color: #f9f9f9; padding: 10px; border-radius: 5px; font-size: 12px; overflow-x: auto;">{tabla_txt}</pre>
+            <div style="text-align: right; font-weight: bold; font-size: 16px; margin-top: 10px;">TOTAL: ${total_final:,.2f}</div>
+            <div style="margin-top: 50px; text-align: center;">
+                <br>__________________________<br>
+                <span style="font-size: 12px;">Firma y Aclaración Responsable Stock</span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.write("") # Espaciador
+    
+    # Botones de acción
+    col_btn1, col_btn2 = st.columns(2)
+    
+    with col_btn1:
+        # Esto permite copiar rápido para pegar en un mail o WhatsApp
+        st.text_area("Texto listo para copiar:", documento_final, height=150)
+    
+    with col_btn2:
         st.download_button(
-            label="📥 Descargar Informe en TXT",
-            data=texto_resumen,
-            file_name=f"auditoria_{ahora.strftime('%d-%m-%Y')}.txt",
+            label="📥 Descargar para Editar (TXT Profesional)",
+            data=documento_final,
+            file_name=f"Auditoria_{ahora.strftime('%d-%m-%Y')}.txt",
             mime="text/plain"
         )
-else:
-    st.info("La lista está vacía. Ingresá un código y cantidad para empezar.")
-
-# Botón para limpiar todo en la barra lateral
-if st.sidebar.button("🗑️ Vaciar Lista Completa"):
-    st.session_state.lista_carga = []
-    st.rerun()

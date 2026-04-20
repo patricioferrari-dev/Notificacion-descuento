@@ -336,7 +336,7 @@ else:
     nombre = st.session_state.get('nombre_responsable', '____________________')
     st.markdown(f"###  {nombre}")
     
-    st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría ha arrojado un faltante de herramientas, que serán descontados de su liquidación final.")
+    st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría ha arrojado un faltante de herramientas por un valor de **${total_final:,.2f}**, que serán descontados de su liquidación final.")
     
     # TABLA
     df_imprimir = pd.DataFrame(st.session_state.carrito)[["Código", "Descripción", "Cantidad", "Subtotal"]]

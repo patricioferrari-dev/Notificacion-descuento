@@ -1,7 +1,7 @@
 import streamlit as st
 
-# Base de datos (resumida para el ejemplo, asegurate de completar los que falten)
-productos = # --- BASE DE DATOS COMPLETA ---
+# --- BASE DE DATOS ---
+# Se eliminó la línea duplicada que causaba el SyntaxError
 productos = {
     "13002": {"desc": "Control remoto para deco Motorola DCT700 y STB P2.7 (sin pilas)", "precio": 28.29},
     "13004": {"desc": "Control remoto para deco Cisco PDS-2140 y Cisco PDS-2144 (sin pilas)", "precio": 70.9},
@@ -198,6 +198,7 @@ productos = {
     "TALBOSHT": {"desc": "TALADRO PERCUTOR BOSCH", "precio": 150000.00},
 }
 
+# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(page_title="Sistema de Carga de Artículos", layout="wide")
 
 # Inicializar el "carrito" o lista de carga si no existe
@@ -216,7 +217,10 @@ with col1:
     if st.button("➕ Agregar a la lista"):
         if codigo_input in productos:
             # Agregamos el producto a la memoria de la sesión
-            st.session_state.lista_carga.append(productos[codigo_input])
+            # Guardamos también el código para el resumen final
+            item_con_codigo = productos[codigo_input].copy()
+            item_con_codigo['codigo'] = codigo_input
+            st.session_state.lista_carga.append(item_con_codigo)
             st.success(f"Agregado: {productos[codigo_input]['desc']}")
         else:
             st.error("Código no encontrado.")
@@ -226,15 +230,15 @@ st.divider()
 st.subheader("📝 Resumen de Carga")
 
 if st.session_state.lista_carga:
-    # Mostrar tabla de lo cargado
     total_final = 0
+    # Mostrar tabla de lo cargado
     for i, item in enumerate(st.session_state.lista_carga):
         col_a, col_b, col_c = st.columns([4, 1, 0.5])
         col_a.write(f"**{item['desc']}**")
         col_b.write(f"${item['precio']:,.2f}")
         total_final += item['precio']
         
-        # Botón opcional para borrar un ítem
+        # Botón para borrar un ítem
         if col_c.button("❌", key=f"btn_{i}"):
             st.session_state.lista_carga.pop(i)
             st.rerun()
@@ -244,16 +248,15 @@ if st.session_state.lista_carga:
 
     # --- PROCESAR FINAL (Notificación) ---
     if st.button("🚀 Generar Notificación Final"):
-        # Armamos el texto para la "hoja" final
         texto_resumen = "RESUMEN DE CARGA DE ARTÍCULOS\n"
         texto_resumen += "="*40 + "\n"
         for item in st.session_state.lista_carga:
-            texto_resumen += f"- {item['desc']}: ${item['precio']:,.2f}\n"
+            texto_resumen += f"- [{item['codigo']}] {item['desc']}: ${item['precio']:,.2f}\n"
         texto_resumen += "="*40 + "\n"
         texto_resumen += f"TOTAL: ${total_final:,.2f}\n"
         texto_resumen += "\nNotificación generada automáticamente."
 
-        st.text_area("Notificación Final para copiar/imprimir:", texto_resumen, height=300)
+        st.text_area("Notificación Final para copiar:", texto_resumen, height=300)
         
         st.download_button(
             label="Descargar Informe TXT",
@@ -264,7 +267,7 @@ if st.session_state.lista_carga:
 else:
     st.info("La lista está vacía. Ingresá un código a la izquierda para empezar.")
 
-# Botón para limpiar todo
+# Botón para limpiar todo en la barra lateral
 if st.sidebar.button("🗑️ Vaciar Lista Completa"):
     st.session_state.lista_carga = []
     st.rerun()

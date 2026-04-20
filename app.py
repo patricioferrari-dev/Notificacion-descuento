@@ -353,7 +353,7 @@ else:
     # Nombre del responsable (donde marcaste en rojo)
     nombre = st.session_state.get('nombre_responsable', '')
     if nombre:
-        st.markdown(f"### Responsable: {nombre.upper()}")
+        st.markdown(f"### {nombre.upper()}")
     else:
         st.markdown("### __________________________")
     

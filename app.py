@@ -265,29 +265,47 @@ productos = {
 
 st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 
-# --- CSS PARA LIMPIAR IMPRESIÓN Y OCULTAR INTERFAZ ---
+Para eliminar ese persistente botón de "Manage app" en la impresión, el problema es que Streamlit lo inyecta a través de un "Shadow DOM" o un iframe externo que el CSS estándar a veces no logra penetrar a menos que seamos extremadamente específicos.
+
+Aquí tienes el bloque de CSS definitivo. He añadido selectores que atacan la estructura interna de la nube de Streamlit.
+
+Sustituye tu bloque de CSS por este:
+Python
+# --- CSS PARA LIMPIAR IMPRESIÓN Y OCULTAR INTERFAZ (VERSIÓN RADICAL) ---
 st.markdown("""
     <style>
-    /* Ocultar elementos de Streamlit en pantalla */
-    header, footer, #MainMenu, .stAppDeployButton, .stDeployButton, iframe[title="Manage app"] {
+    /* 1. OCULTAR EN PANTALLA */
+    header, footer, #MainMenu, .stAppDeployButton, .stDeployButton {
         display: none !important;
         visibility: hidden !important;
     }
-    
-    /* Ajuste de margen superior */
-    .main .block-container {
-        padding-top: 1rem !important;
+
+    /* OCULTAR EL BOTÓN ESPECÍFICO "MANAGE APP" DE STREAMLIT CLOUD */
+    iframe[title="Manage app"], 
+    [data-testid="bundle-viewer-button"],
+    .viewerBadge_container__1QSob,
+    .main ._container_gzm9s_1 {
+        display: none !important;
     }
 
+    /* 2. REGLAS PARA IMPRESIÓN */
     @media print {
-        /* Ocultar botones y expanders al imprimir */
-        .stButton, button, .stDownloadButton, [data-testid="stExpander"], .stHeader {
+        /* Forzar ocultamiento de CUALQUIER elemento flotante o iframe */
+        iframe, button, .stButton, [data-testid="stControlItem"] {
             display: none !important;
+            height: 0;
+            width: 0;
         }
-        /* Forzar que el contenido ocupe toda la hoja */
+        
+        /* Eliminar el espacio superior y forzar fondo blanco */
         .main .block-container {
             padding-top: 0rem !important;
             margin: 0 !important;
+        }
+
+        /* Ocultar la barra de estado de carga */
+        [data-testid="stStatusWidget"] {
+            display: none !important;
         }
     }
     </style>

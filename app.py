@@ -334,7 +334,7 @@ else:
 
     # AQUÍ SE MUESTRA EL NOMBRE QUE MARCASTE EN ROJO
     nombre = st.session_state.get('nombre_responsable', '____________________')
-    st.markdown(f"### : {nombre}")
+    st.markdown(f"###  {nombre}")
     
     st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría ha arrojado un faltante de herramientas, que serán descontados de su liquidación final.")
     

@@ -334,13 +334,21 @@ if st.session_state.lista_carga:
 
     # --- PROCESAR FINAL (Notificación) ---
     if st.button("🚀 Generar Notificación Final"):
-        texto_resumen = "RESUMEN DE CARGA DE ARTÍCULOS\n"
+        # Obtener fecha y hora actual
+        ahora = datetime.now()
+        fecha_str = ahora.strftime("%d/%m/%Y %H:%M:%S") # Formato: Día/Mes/Año Hora:Min:Seg
+
+        texto_resumen = f"RESUMEN DE CARGA DE ARTÍCULOS\n"
+        texto_resumen += f"Fecha de emisión: {fecha_str}\n" # <--- FECHA AGREGADA
         texto_resumen += "="*50 + "\n"
         texto_resumen += f"{'CANT':<5} {'CODIGO':<10} {'DESC':<25} {'TOTAL':>10}\n"
         texto_resumen += "-"*50 + "\n"
         
         for item in st.session_state.lista_carga:
-            linea = f"{item['cantidad']:<5} {item['codigo']:<10} {item['desc'][:25]:<25} ${item['subtotal']:>10,.2f}\n"
+            # Usamos .get para evitar el error de cantidad si quedaron datos viejos
+            cant = item.get('cantidad', 1)
+            subt = item.get('subtotal', item['precio'])
+            linea = f"{cant:<5} {item['codigo']:<10} {item['desc'][:25]:<25} ${subt:>10,.2f}\n"
             texto_resumen += linea
             
         texto_resumen += "="*50 + "\n"
@@ -352,7 +360,7 @@ if st.session_state.lista_carga:
         st.download_button(
             label="Descargar Informe TXT",
             data=texto_resumen,
-            file_name="resumen_carga.txt",
+            file_name=f"resumen_{ahora.strftime('%d-%m-%Y')}.txt",
             mime="text/plain"
         )
 else:

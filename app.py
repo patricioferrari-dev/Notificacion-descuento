@@ -369,7 +369,7 @@ if st.session_state.carrito:
         with col_firma2:
             st.write(" \n" * 4)
             st.write("__________________________________________")
-            st.write("**FIRMA DEL AUDITADO**")
+            st.write("**FIRMA DEL AUDITOR**")
             st.write("Aclaración: _______________________________")
             st.write("DNI: ______________________________________")
         

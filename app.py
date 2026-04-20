@@ -360,7 +360,7 @@ else:
     # Cálculo de total
     total_final = sum(item['Subtotal'] for item in st.session_state.carrito)
     
-    st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle y entregarle el resultado de auditoria sobre sus equipos, materiales y herramientas que fueron entregados en el establecimiento. El mismo ha arrojado faltantes por un valor de **${total_final:,.2f}**, el cual será descontado de su liquidación final")
+    st.write(f"Por medio de la presente, el área de Stock le notifica el resultado de la auditoría de inventario respecto a los elementos (equipos, materiales y herramientas) provistos por el establecimiento. Se ha detectado un faltante total de **${total_final:,.2f}**, el cual será deducido de su liquidación final de haberes.")
     
     # Tabla de artículos
     df_imprimir = pd.DataFrame(st.session_state.carrito)[["Código", "Descripción", "Cantidad", "Subtotal"]]

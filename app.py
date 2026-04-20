@@ -320,40 +320,65 @@ if st.session_state.lista_carga:
 
     st.markdown(f"## TOTAL: ${total_final:,.2f}")
 
-    # --- GENERAR RECIBO ---
     if st.button("🚀 Generar Recibo de Auditoría"):
         ahora = datetime.now()
         fecha_str = ahora.strftime("%d/%m/%Y %H:%M")
 
+        # Construimos las filas de la tabla primero
         filas_html = ""
         for item in st.session_state.lista_carga:
+            cant = item.get('cantidad', 1)
+            subt = item.get('subtotal', 0)
+            desc = item.get('desc', 'Sin descripción')[:30]
+            cod = item.get('codigo', 'S/C')
+            
             filas_html += f"""
             <tr>
-                <td style="text-align:center; border-bottom: 1px dashed #ddd; padding: 5px;">{item['cantidad']}</td>
-                <td style="border-bottom: 1px dashed #ddd; padding: 5px;">{item['codigo']}<br><small>{item['desc'][:30]}</small></td>
-                <td style="text-align:right; border-bottom: 1px dashed #ddd; padding: 5px;">${item['subtotal']:,.2f}</td>
+                <td style="text-align:center; border-bottom: 1px dashed #ddd; padding: 5px;">{cant}</td>
+                <td style="border-bottom: 1px dashed #ddd; padding: 5px;">{cod}<br><small>{desc}</small></td>
+                <td style="text-align:right; border-bottom: 1px dashed #ddd; padding: 5px;">${subt:,.2f}</td>
             </tr>
             """
 
-        recibo_estilo = f"""
-        <div style="background-color: white; max-width: 500px; margin: 20px auto; padding: 30px; border: 1px solid #ccc; font-family: 'Courier New', Courier, monospace;">
+        # Todo el diseño va dentro de esta variable
+        recibo_diseno = f"""
+        <div style="background-color: white; max-width: 500px; margin: auto; padding: 25px; border: 1px solid #ccc; font-family: 'Courier New', Courier, monospace; color: #333; box-shadow: 0px 4px 10px rgba(0,0,0,0.1);">
             <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px;">
                 <h2 style="margin: 0;">AUDITORÍA DE STOCK</h2>
+                <div style="font-size: 12px;">Comprobante de Faltante</div>
             </div>
-            <div style="text-align: right; margin-top: 10px;"><b>FECHA:</b> {fecha_str}</div>
-            <p style="font-family: sans-serif; font-size: 14px; text-align: justify; margin-top: 20px;">
+
+            <div style="margin-top: 15px; font-size: 13px; text-align: right;">
+                <b>FECHA:</b> {fecha_str}
+            </div>
+
+            <div style="margin-top: 20px; font-size: 14px; text-align: justify; font-family: sans-serif; line-height: 1.4;">
                 Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría ha arrojado un faltante de herramientas de <b>${total_final:,.2f}</b>, que serán descontados de su liquidación final.
-            </p>
-            <table style="width: 100%; margin-top: 20px; border-collapse: collapse; font-size: 13px;">
-                <thead><tr style="border-bottom: 2px solid #333;"><th>CANT</th><th>DETALLE</th><th style="text-align:right;">SUBTOTAL</th></tr></thead>
-                <tbody>{filas_html}</tbody>
+            </div>
+
+            <table style="width: 100%; margin-top: 25px; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #333;">
+                        <th style="width: 15%;">CANT</th>
+                        <th style="width: 55%; text-align: left;">DETALLE</th>
+                        <th style="width: 30%; text-align: right;">SUBTOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {filas_html}
+                </tbody>
             </table>
-            <div style="text-align: right; font-size: 18px; font-weight: bold; margin-top: 20px;">TOTAL: ${total_final:,.2f}</div>
-            <div style="margin-top: 40px; text-align: center; font-size: 12px;">
-                <p>_________________________________<br><b>FIRMA RESPONSABLE DE STOCK</b></p>
+
+            <div style="margin-top: 20px; text-align: right; font-size: 18px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px;">
+                TOTAL: ${total_final:,.2f}
+            </div>
+
+            <div style="margin-top: 50px; text-align: center; font-size: 12px;">
+                <p>_________________________________</p>
+                <b>FIRMA RESPONSABLE DE STOCK</b>
             </div>
         </div>
         """
-        st.markdown(recibo_estilo, unsafe_allow_html=True)
-else:
-    st.info("La lista está vacía. Carga artículos para generar el recibo.")
+        
+        # ESTA ES LA LÍNEA CLAVE:
+        st.markdown(recibo_diseno, unsafe_allow_html=True)

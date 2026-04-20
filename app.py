@@ -284,15 +284,19 @@ col1, col2 = st.columns([1, 2])
 with col1:
     st.subheader("Cargar Artículo")
     codigo_input = st.text_input("Código del Artículo:").strip()
+    # NUEVO: Input de cantidad
+    cantidad_input = st.number_input("Cantidad:", min_value=1, value=1, step=1)
     
     if st.button("➕ Agregar a la lista"):
         if codigo_input in productos:
-            # Agregamos el producto a la memoria de la sesión
-            # Guardamos también el código para el resumen final
+            # Agregamos el producto y la cantidad a la memoria
             item_con_codigo = productos[codigo_input].copy()
             item_con_codigo['codigo'] = codigo_input
+            item_con_codigo['cantidad'] = cantidad_input
+            item_con_codigo['subtotal'] = item_con_codigo['precio'] * cantidad_input
+            
             st.session_state.lista_carga.append(item_con_codigo)
-            st.success(f"Agregado: {productos[codigo_input]['desc']}")
+            st.success(f"Agregado: {cantidad_input}x {productos[codigo_input]['desc']}")
         else:
             st.error("Código no encontrado.")
 
@@ -302,15 +306,26 @@ st.subheader("📝 Resumen de Carga")
 
 if st.session_state.lista_carga:
     total_final = 0
+    # Cabecera de la tabla
+    c_head1, c_head2, c_head3, c_head4, c_head5 = st.columns([1, 3, 1, 1, 0.5])
+    c_head1.write("**Cant.**")
+    c_head2.write("**Descripción**")
+    c_head3.write("**P. Unit**")
+    c_head4.write("**Subtotal**")
+    
     # Mostrar tabla de lo cargado
     for i, item in enumerate(st.session_state.lista_carga):
-        col_a, col_b, col_c = st.columns([4, 1, 0.5])
-        col_a.write(f"**{item['desc']}**")
-        col_b.write(f"${item['precio']:,.2f}")
-        total_final += item['precio']
+        col_cant, col_desc, col_unit, col_sub, col_del = st.columns([1, 3, 1, 1, 0.5])
+        
+        col_cant.write(f"{item['cantidad']}")
+        col_desc.write(f"**{item['desc']}**")
+        col_unit.write(f"${item['precio']:,.2f}")
+        col_sub.write(f"**${item['subtotal']:,.2f}**")
+        
+        total_final += item['subtotal']
         
         # Botón para borrar un ítem
-        if col_c.button("❌", key=f"btn_{i}"):
+        if col_del.button("❌", key=f"btn_{i}"):
             st.session_state.lista_carga.pop(i)
             st.rerun()
 
@@ -320,11 +335,16 @@ if st.session_state.lista_carga:
     # --- PROCESAR FINAL (Notificación) ---
     if st.button("🚀 Generar Notificación Final"):
         texto_resumen = "RESUMEN DE CARGA DE ARTÍCULOS\n"
-        texto_resumen += "="*40 + "\n"
+        texto_resumen += "="*50 + "\n"
+        texto_resumen += f"{'CANT':<5} {'CODIGO':<10} {'DESC':<25} {'TOTAL':>10}\n"
+        texto_resumen += "-"*50 + "\n"
+        
         for item in st.session_state.lista_carga:
-            texto_resumen += f"- [{item['codigo']}] {item['desc']}: ${item['precio']:,.2f}\n"
-        texto_resumen += "="*40 + "\n"
-        texto_resumen += f"TOTAL: ${total_final:,.2f}\n"
+            linea = f"{item['cantidad']:<5} {item['codigo']:<10} {item['desc'][:25]:<25} ${item['subtotal']:>10,.2f}\n"
+            texto_resumen += linea
+            
+        texto_resumen += "="*50 + "\n"
+        texto_resumen += f"TOTAL FINAL: ${total_final:,.2f}\n"
         texto_resumen += "\nNotificación generada automáticamente."
 
         st.text_area("Notificación Final para copiar:", texto_resumen, height=300)
@@ -336,7 +356,7 @@ if st.session_state.lista_carga:
             mime="text/plain"
         )
 else:
-    st.info("La lista está vacía. Ingresá un código a la izquierda para empezar.")
+    st.info("La lista está vacía. Ingresá un código y cantidad para empezar.")
 
 # Botón para limpiar todo en la barra lateral
 if st.sidebar.button("🗑️ Vaciar Lista Completa"):

@@ -273,23 +273,28 @@ productos = {
 
 st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 
-# --- OCULTAR ELEMENTOS EN IMPRESIÓN ---
+# --- OCULTAR ELEMENTOS DE INTERFAZ Y MANAGE APP ---
 st.markdown("""
     <style>
-    /* Ocultar elementos de la interfaz de Streamlit en la pantalla y en la impresión */
-    #MainMenu, footer, header {visibility: hidden; height: 0;}
+    /* Ocultar barra superior, menú y footer de Streamlit */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
     
-    /* Reglas específicas para cuando se presiona Imprimir (Ctrl+P) */
+    /* Ocultar el botón flotante 'Manage App' de la esquina inferior derecha */
+    .stAppDeployButton {display: none !important;}
+    .stCustomComponentV1 {display: none !important;}
+    div[data-testid="stStatusWidget"] {display: none !important;}
+    
+    /* Estilos específicos para la impresión */
     @media print {
-        /* Ocultar botones de Streamlit (como el de 'Volver a la Edición') */
-        .stButton {display: none !important;}
+        /* Ocultar todos los botones (incluyendo el de volver) */
+        .stButton, button {display: none !important;}
         
-        /* Eliminar márgenes forzados y pies de página del navegador (URL, fecha) */
-        @page {
-            margin: 0.5cm;
-        }
-        body {
-            margin: 0;
+        /* Eliminar espacios extra que deja Streamlit arriba */
+        .main .block-container {
+            padding-top: 0rem;
+            padding-bottom: 0rem;
         }
     }
     </style>

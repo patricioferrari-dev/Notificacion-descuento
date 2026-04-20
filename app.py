@@ -271,18 +271,17 @@ productos = {
     "TALUMI": {"desc": "TALADRO PERCUTOR UMI 550W", "precio": 70000.00}
 }
 
-st.set_page_config(page_title="Auditoría Estilo Excel", layout="wide")
+st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 
-# --- INICIALIZACIÓN DE ESTADOS ---
 if 'carrito' not in st.session_state:
     st.session_state.carrito = []
-if 'mostrar_recibo' not in st.session_state:
-    st.session_state.mostrar_recibo = False
+if 'ver_recibo' not in st.session_state:
+    st.session_state.ver_recibo = False
 
-st.title("📊 Auditoría de Stock - Formato Planilla")
+st.title("📊 Auditoría de Stock")
 
-# --- ENTRADA DE DATOS ---
-with st.expander("➕ Cargar Nuevo Artículo", expanded=not st.session_state.mostrar_recibo):
+# --- CARGA DE DATOS ---
+with st.expander("➕ Cargar Nuevo Artículo", expanded=not st.session_state.ver_recibo):
     col1, col2, col3 = st.columns([2, 1, 1])
     codigo = col1.text_input("Código del Artículo:").strip()
     cantidad = col2.number_input("Cantidad:", min_value=1, value=1)
@@ -297,99 +296,79 @@ with st.expander("➕ Cargar Nuevo Artículo", expanded=not st.session_state.mos
                 "Subtotal": productos[codigo]["precio"] * cantidad
             }
             st.session_state.carrito.append(nuevo_item)
-            st.session_state.mostrar_recibo = False # Resetear vista si añade algo nuevo
+            st.session_state.ver_recibo = False
             st.rerun()
         else:
             st.error("Código inexistente")
 
-# --- VISTA TIPO EXCEL ---
-st.subheader("📝 Planilla de Faltantes")
-
+# --- TABLA DE EDICIÓN ---
 if st.session_state.carrito:
     df = pd.DataFrame(st.session_state.carrito)
     
-    # Editor de datos
+    st.subheader("📝 Planilla de Faltantes")
     st.data_editor(
         df,
         column_config={
             "Precio Unit.": st.column_config.NumberColumn(format="$ %.2f"),
             "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
-            "Cantidad": st.column_config.NumberColumn(step=1),
         },
         disabled=["Código", "Descripción", "Precio Unit.", "Subtotal"],
         hide_index=True,
         use_container_width=True,
-        key="planilla_editor"
+        key="editor"
     )
 
     total_final = df["Subtotal"].sum()
 
-    col_t1, col_t2 = st.columns([3, 1])
-    with col_t2:
-        st.markdown(f"""
-            <div style="border: 2px solid #2e7d32; padding: 10px; border-radius: 5px; text-align: center; background-color: #f1f8e9; margin-top: 10px;">
-                <span style="color: #666; font-size: 14px;">TOTAL GENERAL</span><br>
-                <b style="font-size: 24px; color: #1b5e20;">${total_final:,.2f}</b>
-            </div>
-        """, unsafe_allow_html=True)
-
-    # --- ACCIONES ---
+    # --- BOTONES DE ACCIÓN ---
     st.divider()
     c1, c2, c3 = st.columns(3)
     
-    if c1.button("🗑️ Limpiar Planilla"):
+    if c1.button("🗑️ Limpiar Todo"):
         st.session_state.carrito = []
+        st.session_state.ver_recibo = False
         st.rerun()
 
-    # Opción de descarga directa
-    csv = df.to_csv(index=False).encode('utf-8-sig') # utf-8-sig para que Excel lo abra bien
-    c2.download_button("💾 Exportar a Excel", csv, "auditoria.csv", "text/csv", use_container_width=True)
+    csv = df.to_csv(index=False).encode('utf-8-sig')
+    c2.download_button("💾 Exportar CSV", csv, "auditoria.csv", "text/csv", use_container_width=True)
 
-    # Lógica para mostrar el recibo
-    if "ver_recibo" not in st.session_state:
-        st.session_state.ver_recibo = False
-
-    if c3.button("🚀 Generar Recibo Formal", use_container_width=True):
+    if c3.button("🚀 Vista Previa para Imprimir", use_container_width=True):
         st.session_state.ver_recibo = True
 
-    # --- VISTA DEL RECIBO FORMAL ---
+    # --- VISTA DE IMPRESIÓN (RECIBO FORMAL) ---
     if st.session_state.ver_recibo:
         st.divider()
-        
         fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
         
-        # 1. Generamos las filas de la tabla
+        # Construcción de filas siguiendo el orden: CÓDIGO | DESCRIPCIÓN | CANT | VALOR
         filas_html = ""
         for _, row in df.iterrows():
             filas_html += f"""
             <tr>
-                <td style="border: 1px solid #ddd; padding: 10px; text-align:center;">{row['Cantidad']}</td>
-                <td style="border: 1px solid #ddd; padding: 10px;">{row['Código']} - {row['Descripción']}</td>
-                <td style="border: 1px solid #ddd; padding: 10px; text-align:right;">${row['Subtotal']:,.2f}</td>
+                <td style="border-bottom: 1px solid #eee; padding: 8px;">{row['Código']}</td>
+                <td style="border-bottom: 1px solid #eee; padding: 8px;">{row['Descripción']}</td>
+                <td style="border-bottom: 1px solid #eee; padding: 8px; text-align: center;">{row['Cantidad']}</td>
+                <td style="border-bottom: 1px solid #eee; padding: 8px; text-align: right;">${row['Subtotal']:,.2f}</td>
             </tr>
             """
 
-        # 2. Creamos el contenedor completo
-        # IMPORTANTE: El estilo 'background-color: white' y 'color: black' asegura que parezca una hoja
-        recibo_diseno = f"""
-        <div style="background-color: white; padding: 40px; border: 1px solid #eee; border-radius: 5px; color: #333; font-family: 'Helvetica', sans-serif;">
-            <h1 style="text-align: center; color: #1e3d59; font-size: 32px; margin-bottom: 5px;">AUDITORÍA DE STOCK</h1>
-            <div style="border-top: 3px solid #1e3d59; width: 100%; margin-bottom: 20px;"></div>
+        # Diseño del documento
+        recibo_html = f"""
+        <div style="background-color: white; color: black; padding: 30px; border: 1px solid #ddd; font-family: sans-serif;">
+            <h2 style="text-align: center; margin-bottom: 0;">NOTIFICACIÓN DE AUDITORÍA</h2>
+            <hr style="border: 1px solid black;">
+            <p style="text-align: right;"><b>Fecha:</b> {fecha_actual}</p>
             
-            <p style="text-align: right; font-weight: bold;">FECHA: {fecha_actual}</p>
+            <p>Se informa que tras la auditoría realizada, se ha detectado un faltante por un valor total de 
+            <b>${total_final:,.2f}</b>, el cual será descontado de su liquidación.</p>
             
-            <p style="font-size: 16px; line-height: 1.6;">
-                Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría 
-                ha arrojado un faltante de herramientas de <b style="color: #d32f2f;">${total_final:,.2f}</b>, 
-                que serán descontados de su liquidación final.
-            </p>
-            
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                 <thead>
-                    <tr style="background-color: #f8f9fa;">
-                        <th style="border: 1px solid #ddd; padding: 12px;">CANT</th>
-                        <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">DETALLE</th>
-                        <th style="border: 1px solid #ddd; padding: 12px; text-align: right;">SUBTOTAL</th>
+                    <tr style="background-color: #f2f2f2;">
+                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">CÓDIGO</th>
+                        <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">DESCRIPCIÓN</th>
+                        <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">CANT</th>
+                        <th style="border: 1px solid #ccc; padding: 8px; text-align: right;">VALOR</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -397,24 +376,23 @@ if st.session_state.carrito:
                 </tbody>
             </table>
             
-            <div style="margin-top: 30px; text-align: right;">
-                <h2 style="margin: 0; color: #1e3d59;">TOTAL A CARGO: ${total_final:,.2f}</h2>
+            <div style="text-align: right; margin-top: 20px;">
+                <h3 style="margin: 0;">TOTAL A CARGO: ${total_final:,.2f}</h3>
             </div>
             
-            <div style="margin-top: 70px; text-align: center;">
-                <p style="margin-bottom: 0;">__________________________________________</p>
-                <b style="text-transform: uppercase; font-size: 12px;">Firma del Responsable</b>
+            <div style="margin-top: 80px; text-align: center;">
+                <p>__________________________________________</p>
+                <p><b>FIRMA DEL RESPONSABLE</b></p>
             </div>
         </div>
         """
         
-        # LA CLAVE ES ESTA LÍNEA:
-        st.markdown(recibo_diseno, unsafe_allow_html=True)
-        
-        st.caption("💡 Consejo: Para guardar como PDF, presiona Ctrl+P (o Cmd+P) y elige 'Guardar como PDF'.")
+        st.markdown(recibo_html, unsafe_allow_html=True)
+        st.info("💡 Tip: Presiona **Ctrl + P** para imprimir esta página o guardarla como PDF.")
         
         if st.button("❌ Cerrar Vista Previa"):
             st.session_state.ver_recibo = False
             st.rerun()
+
 else:
-    st.info("La planilla está vacía. Ingrese un código arriba.")
+    st.info("Ingrese un código de producto para comenzar la planilla.")

@@ -349,66 +349,31 @@ if st.session_state.carrito:
     if c3.button("🚀 Generar Vista de Impresión", use_container_width=True):
         st.session_state.mostrar_recibo = True
 
-    # --- LÓGICA DEL RECIBO FORMAL ---
+    # --- LÓGICA DE LA VISTA PREVIA TIPO EXCEL ---
     if st.session_state.mostrar_recibo:
         st.divider()
-        st.subheader("📄 Recibo de Auditoría")
+        st.subheader("🖼️ Vista Previa de Planilla")
         
-        fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
+        # Usamos st.dataframe para una vista estática pero con estilo Excel
+        # A diferencia del editor, esta es más limpia para "solo lectura"
+        st.dataframe(
+            df,
+            column_config={
+                "Precio Unit.": st.column_config.NumberColumn(format="$ %.2f"),
+                "Subtotal": st.column_config.NumberColumn(format="$ %.2f"),
+            },
+            hide_index=True,
+            use_container_width=True
+        )
         
-        # Construcción de filas de la tabla en HTML
-        filas_html = ""
-        for _, row in df.iterrows():
-            filas_html += f"""
-            <tr>
-                <td style="border-bottom: 1px solid #ddd; padding: 8px;">{row['Código']}</td>
-                <td style="border-bottom: 1px solid #ddd; padding: 8px;">{row['Descripción']}</td>
-                <td style="border-bottom: 1px solid #ddd; padding: 8px; text-align:center;">{row['Cantidad']}</td>
-                <td style="border-bottom: 1px solid #ddd; padding: 8px; text-align:right;">${row['Precio Unit.']:,.2f}</td>
-                <td style="border-bottom: 1px solid #ddd; padding: 8px; text-align:right;">${row['Subtotal']:,.2f}</td>
-            </tr>
-            """
+        # Resumen final simple
+        c_res1, c_res2 = st.columns([3, 1])
+        fecha_str = datetime.now().strftime("%d/%m/%Y %H:%M")
+        
+        c_res1.write(f"**Fecha de reporte:** {fecha_str}")
+        c_res2.metric("TOTAL A DESCONTAR", f"${total_final:,.2f}")
 
-        recibo_template = f"""
-        <div style="background-color: white; padding: 40px; border: 1px solid #ccc; color: black; font-family: sans-serif;">
-            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #333; padding-bottom: 10px;">
-                <div>
-                    <h2 style="margin:0;">COMPROBANTE DE AUDITORÍA</h2>
-                    <p style="margin:0; color: #666;">Sistema de Gestión de Stock</p>
-                </div>
-                <div style="text-align: right;">
-                    <p style="margin:0;"><b>Fecha:</b> {fecha_actual}</p>
-                    <p style="margin:0;"><b>Nro:</b> {datetime.now().strftime("%Y%m%d%H%M")}</p>
-                </div>
-            </div>
-            
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-                <thead>
-                    <tr style="background-color: #f2f2f2;">
-                        <th style="padding: 10px; text-align: left;">CÓDIGO</th>
-                        <th style="padding: 10px; text-align: left;">DESCRIPCIÓN</th>
-                        <th style="padding: 10px; text-align: center;">CANT.</th>
-                        <th style="padding: 10px; text-align: right;">UNIT.</th>
-                        <th style="padding: 10px; text-align: right;">SUBTOTAL</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filas_html}
-                </tbody>
-            </table>
-            
-            <div style="margin-top: 30px; text-align: right;">
-                <h3 style="margin:0;">TOTAL A CARGO: ${total_final:,.2f}</h3>
-            </div>
-            
-            <div style="margin-top: 50px; display: flex; justify-content: space-around;">
-                <div style="border-top: 1px solid #000; width: 200px; text-align: center; padding-top: 5px;">Firma Auditor</div>
-                <div style="border-top: 1px solid #000; width: 200px; text-align: center; padding-top: 5px;">Firma Técnico</div>
-            </div>
-        </div>
-        """
-        st.markdown(recibo_template, unsafe_allow_html=True)
-        st.caption("Tip: Para imprimir, usa Ctrl+P y selecciona 'Guardar como PDF'")
+        st.warning("👉 Para imprimir: Usa la opción de 'Exportar a CSV' y ábrelo en Excel para darle el formato final de impresión.")
 
 else:
     st.info("La planilla está vacía. Ingrese un código arriba.")

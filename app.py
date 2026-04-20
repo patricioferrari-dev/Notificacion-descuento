@@ -384,4 +384,4 @@ else:
         st.write("DNI: ______________________________________")
     
     st.write("\n" * 2)
-    st.info("💡 **Para imprimir o guardar como PDF:** Presiona **Ctrl+P**. En el menú de impresión, asegúrate de activar la opción **'Gráficos de fondo'**.")
+    

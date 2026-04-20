@@ -273,28 +273,39 @@ productos = {
 
 st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 
-# --- OCULTAR ELEMENTOS DE INTERFAZ Y MANAGE APP ---
+# --- OCULTAR ELEMENTOS DE INTERFAZ Y AJUSTE DE IMPRESIÓN ---
 st.markdown("""
     <style>
-    /* Ocultar barra superior, menú y footer de Streamlit */
+    /* Ocultar elementos de Streamlit en pantalla */
     header {visibility: hidden;}
     footer {visibility: hidden;}
     #MainMenu {visibility: hidden;}
-    
-    /* Ocultar el botón flotante 'Manage App' de la esquina inferior derecha */
     .stAppDeployButton {display: none !important;}
-    .stCustomComponentV1 {display: none !important;}
     div[data-testid="stStatusWidget"] {display: none !important;}
     
-    /* Estilos específicos para la impresión */
+    /* Ajuste de márgenes para que no quede espacio vacío arriba */
+    .main .block-container {
+        padding-top: 1rem !important;
+    }
+
     @media print {
-        /* Ocultar todos los botones (incluyendo el de volver) */
-        .stButton, button {display: none !important;}
+        /* Ocultar botones y cualquier elemento de navegación al imprimir */
+        .stButton, button, [data-testid="stExpander"] {
+            display: none !important;
+        }
         
-        /* Eliminar espacios extra que deja Streamlit arriba */
+        /* Forzar que el fondo y las tablas se vean bien */
+        body {
+            background-color: white !important;
+        }
+
+        /* Eliminar el botón "Volver a la edición" específicamente */
+        section[data-testid="stSidebar"] {display: none;}
+        
+        /* Quitar espacios extra de Streamlit para la hoja física */
         .main .block-container {
-            padding-top: 0rem;
-            padding-bottom: 0rem;
+            padding: 0 !important;
+            margin: 0 !important;
         }
     }
     </style>

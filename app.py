@@ -265,42 +265,51 @@ productos = {
 
 st.set_page_config(page_title="Auditoría de Stock", layout="wide")
 
-# --- OCULTAR ELEMENTOS DE INTERFAZ TOTAL ---
+# --- ELIMINACIÓN TOTAL DE INTERFAZ (MANAGE APP Y OTROS) ---
 st.markdown("""
     <style>
-    /* 1. Ocultar el botón 'Manage App' y otros elementos flotantes de Streamlit */
-    iframe[title="Manage app"] {display: none !important;}
-    .stAppDeployButton {display: none !important;}
-    #stDecoration {display: none !important;}
-    [data-testid="stStatusWidget"] {display: none !important;}
-    header {visibility: hidden; height: 0;}
-    footer {visibility: hidden;}
-    
-    /* 2. Quitar el espacio en blanco superior de la página */
-    .main .block-container {
-        padding-top: 0rem !important;
-        margin-top: -2rem !important;
+    /* 1. OCULTAR BOTÓN MANAGE APP (TODAS LAS VARIANTES POSIBLES) */
+    .stAppDeployButton {
+        display: none !important;
+    }
+    iframe[title="Manage app"] {
+        display: none !important;
+    }
+    div[data-testid="bundle-viewer-button"] {
+        display: none !important;
+    }
+    /* Este selector apunta al botón negro flotante específico */
+    button[data-testid="stBaseButton-element"] {
+        display: none !important;
+    }
+    /* Oculta el contenedor inferior derecho por completo */
+    div.stDeployButton {
+        display: none !important;
     }
 
-    /* 3. Reglas exclusivas para cuando el usuario imprime (Ctrl + P) */
+    /* 2. OCULTAR DECORACIÓN Y FOOTER */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    #stDecoration {display: none !important;}
+
+    /* 3. AJUSTE DE ESPACIO SUPERIOR */
+    .main .block-container {
+        padding-top: 1rem !important;
+    }
+
+    /* 4. REGLAS PARA IMPRESIÓN LIMPIA */
     @media print {
-        /* Ocultar botones de navegación (Volver, etc.) */
-        .stButton, button {
+        .stButton, button, .stAppDeployButton {
             display: none !important;
         }
-        
-        /* Asegurar que la hoja no tenga márgenes raros */
-        .main .block-container {
-            padding: 0 !important;
-            margin: 0 !important;
+        /* Forzar que no aparezca nada de Streamlit */
+        iframe, .stDeployButton {
+            display: none !important;
         }
-
-        /* Ocultar cualquier línea divisoria o expander que no deba imprimirse */
-        hr { margin: 1em 0 !important; }
     }
     </style>
     """, unsafe_allow_html=True)
-
 if 'carrito' not in st.session_state:
     st.session_state.carrito = []
 if 'ver_recibo' not in st.session_state:

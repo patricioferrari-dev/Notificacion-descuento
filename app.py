@@ -329,12 +329,9 @@ if st.session_state.carrito:
         st.session_state.ver_recibo = False
         st.rerun()
 
-    # --- EXPORTACIÓN PARA EXCEL ---
-    # 1. Creamos una copia para no alterar lo que ves en pantalla
-    df_excel = df.copy()
-    
-    # 2. Convertimos a CSV usando PUNTO Y COMA (;) que es lo que Excel reconoce en español
-    # El encoding 'utf-8-sig' es vital para que Excel no rompa los caracteres
+    # --- EXPORTACIÓN PARA EXCEL (Corregida) ---
+    df_excel = pd.DataFrame(st.session_state.carrito)
+    # Usamos punto y coma (;) para que Excel en español lo separe en columnas automáticamente
     csv = df_excel.to_csv(index=False, sep=';', decimal=',', encoding='utf-8-sig').encode('utf-8-sig')
     
     c2.download_button(
@@ -347,32 +344,26 @@ if st.session_state.carrito:
 
     if c3.button("🚀 Vista Previa para Imprimir", use_container_width=True):
         st.session_state.ver_recibo = True
-    
-    if c3.button("🚀 Vista Previa para Imprimir", use_container_width=True):
-        st.session_state.ver_recibo = True
 
-    # --- VISTA PREVIA SENCILLA PARA IMPRIMIR ---
+    # --- VISTA PREVIA (Sin códigos raros y con firmas al lado) ---
     if st.session_state.ver_recibo:
         st.divider()
         
-        # Título y Fecha
         st.markdown("<h2 style='text-align: center;'>NOTIFICACIÓN DE AUDITORÍA</h2>", unsafe_allow_html=True)
         
-        col_fecha1, col_fecha2 = st.columns([3, 1])
-        col_fecha2.write(f"**Fecha:** {datetime.now().strftime('%d/%m/%Y')}")
+        col_f1, col_f2 = st.columns([3, 1])
+        col_f2.write(f"**Fecha:** {datetime.now().strftime('%d/%m/%Y')}")
         
-        st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle y entregarle el resultado de auditoría sobre sus equipos, materiales y herramientas que fueron entregados en el establecimiento. El mismo ha arrojado faltantes por un valor de **${total_final:,.2f}**, el cual será descontado de su liquidación final.")
+        st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría ha arrojado un faltante de herramientas por un valor de **${total_final:,.2f}**, que serán descontados de su liquidación final.")
         
-        # Tabla ordenada: Código, Descripción, Cantidad, Subtotal
-        df_imprimir = df[["Código", "Descripción", "Cantidad", "Subtotal"]]
+        # Tabla limpia y profesional
+        df_imprimir = df_excel[["Código", "Descripción", "Cantidad", "Subtotal"]]
         st.table(df_imprimir.style.format({"Subtotal": "${:,.2f}"}))
         
-        # Total al final
         st.markdown(f"<h3 style='text-align: right;'>TOTAL A CARGO: ${total_final:,.2f}</h3>", unsafe_allow_html=True)
         
-        # --- SECCIÓN DE FIRMAS (ESTRUCTURA SENCILLA) ---
-        st.write("\n" * 3) # Espacio para que no quede pegado a la tabla
-        
+        # --- SECCIÓN DE FIRMAS (Una al lado de la otra) ---
+        st.write("\n" * 3)
         col_firma1, col_firma2 = st.columns(2)
         
         with col_firma1:

@@ -52,7 +52,7 @@ productos = {
     "50014": {"desc": "Decodificador HD Sagemcom DCIW362 4k", "precio": 185000.00},
     "50015": {"desc": "VIDEO SOUND BOX SAGEMCOM 3930", "precio": 185000.00},
     "50016": {"desc": "DECODIFICADOR 4K SAGEMCOM DIW377", "precio": 185000.00},
-    "50017": {"desc": "Decodificador HD Sagemcom DCIW362 4k AMARILLA", "precio": 185000.00}
+    "50017": {"desc": "Decodificador HD Sagemcom DCIW362 4k AMARILLA", "precio": 185000.00},
     "50018": {"desc": "DECODIFICADOR 4K SEI ROBOTICS SEI800", "precio": 185000.00},
     "51001": {"desc": "Modem Motorola SBV5120i (Recuperado)", "precio": 7100.00},
     "51019": {"desc": "Modem Scientific Atlanta DPC2203 (Recuperado)", "precio": 1563.69},

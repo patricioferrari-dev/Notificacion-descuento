@@ -344,7 +344,7 @@ if st.session_state.carrito:
         col_fecha1, col_fecha2 = st.columns([3, 1])
         col_fecha2.write(f"**Fecha:** {datetime.now().strftime('%d/%m/%Y')}")
         
-        st.write(f"Se informa que se ha detectado un faltante de herramientas por un valor de **${total_final:,.2f}**, el cual será descontado de su liquidación final.")
+        st.write(f"Me dirijo a usted desde el área de Stock a los fines de informarle y entregarle el resultado de auditoria sobre sus equipos, materiales y herramientas que fueron entregados en el establecimiento. El mismo ha arrojado faltantes por un valor de **${total_final:,.2f}**, el cual será descontado de su liquidación final.")
         
         # Mostramos la tabla limpia (Ordenada: Código, Descripción, Cantidad, Subtotal)
         # Reordenamos las columnas para que queden como pediste

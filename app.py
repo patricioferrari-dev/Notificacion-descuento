@@ -336,31 +336,47 @@ if st.session_state.lista_carga:
     if st.button("🚀 Generar Notificación Final"):
         # Obtener fecha y hora actual
         ahora = datetime.now()
-        fecha_str = ahora.strftime("%d/%m/%Y %H:%M:%S") # Formato: Día/Mes/Año Hora:Min:Seg
+        fecha_str = ahora.strftime("%d/%m/%Y %H:%M:%S")
 
-        texto_resumen = f"RESUMEN DE CARGA DE ARTÍCULOS\n"
-        texto_resumen += f"Fecha de emisión: {fecha_str}\n" # <--- FECHA AGREGADA
-        texto_resumen += "="*50 + "\n"
-        texto_resumen += f"{'CANT':<5} {'CODIGO':<10} {'DESC':<25} {'TOTAL':>10}\n"
-        texto_resumen += "-"*50 + "\n"
+        # Texto formal con el monto total insertado automáticamente
+        cuerpo_formal = (
+            f"Me dirijo a usted desde el área de Stock a los fines de informarle y entregarle "
+            f"el resultado de auditoria sobre sus equipos, materiales y herramientas que fueron "
+            f"entregados en el establecimiento. El mismo ha arrojado con un faltantes de herramientas "
+            f"de \"${total_final:,.2f}\", que serán descontados de su liquidación final."
+        )
+
+        # Construcción del contenido del texto
+        texto_resumen = "NOTIFICACIÓN OFICIAL DE AUDITORÍA\n"
+        texto_resumen += f"Fecha de emisión: {fecha_str}\n"
+        texto_resumen += "="*60 + "\n\n"
+        texto_resumen += cuerpo_formal + "\n\n"
+        texto_resumen += "DETALLE DEL FALTANTE:\n"
+        texto_resumen += "-"*60 + "\n"
+        texto_resumen += f"{'CANT':<5} {'CODIGO':<10} {'DESC':<30} {'SUBTOTAL':>12}\n"
+        texto_resumen += "-"*60 + "\n"
         
         for item in st.session_state.lista_carga:
-            # Usamos .get para evitar el error de cantidad si quedaron datos viejos
             cant = item.get('cantidad', 1)
             subt = item.get('subtotal', item['precio'])
-            linea = f"{cant:<5} {item['codigo']:<10} {item['desc'][:25]:<25} ${subt:>10,.2f}\n"
+            # Acortamos descripción para que entre en la línea
+            desc_corta = item['desc'][:28]
+            linea = f"{cant:<5} {item['codigo']:<10} {desc_corta:<30} ${subt:>12,.2f}\n"
             texto_resumen += linea
             
-        texto_resumen += "="*50 + "\n"
-        texto_resumen += f"TOTAL FINAL: ${total_final:,.2f}\n"
-        texto_resumen += "\nNotificación generada automáticamente."
+        texto_resumen += "-"*60 + "\n"
+        texto_resumen += f"MONTO TOTAL A DESCONTAR: ${total_final:,.2f}\n"
+        texto_resumen += "\nFirma: Área de Stock"
 
-        st.text_area("Notificación Final para copiar:", texto_resumen, height=300)
+        # Mostrar en pantalla
+        st.subheader("📄 Notificación Lista")
+        st.text_area("Copiar este texto:", texto_resumen, height=400)
         
+        # Botón de descarga
         st.download_button(
-            label="Descargar Informe TXT",
+            label="📥 Descargar Informe en TXT",
             data=texto_resumen,
-            file_name=f"resumen_{ahora.strftime('%d-%m-%Y')}.txt",
+            file_name=f"auditoria_{ahora.strftime('%d-%m-%Y')}.txt",
             mime="text/plain"
         )
 else:

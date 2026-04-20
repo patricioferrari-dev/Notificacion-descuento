@@ -1,5 +1,5 @@
 import streamlit as st
-
+from datetime import datetime
 # --- BASE DE DATOS ---
 # Se eliminó la línea duplicada que causaba el SyntaxError
 productos = {

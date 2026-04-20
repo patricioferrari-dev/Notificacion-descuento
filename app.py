@@ -355,7 +355,7 @@ else:
     if nombre:
         st.markdown(f"### Responsable: {nombre.upper()}")
     else:
-        st.markdown("### Responsable: __________________________")
+        st.markdown("### __________________________")
     
     # Cálculo de total
     total_final = sum(item['Subtotal'] for item in st.session_state.carrito)

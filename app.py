@@ -148,7 +148,7 @@ productos = {
     "90061": {"desc": "Coupler domiciliario de 9dB", "precio": 430.00},
     "90062": {"desc": "Coupler domiciliario de 12dB", "precio": 430.00},
     "90064": {"desc": "Coupler domiciliario de 20dB", "precio": 430.00},
-    "90069": {"desc": "Atenuador domiciliario de 16dB", "precio": 150.00}
+    "90069": {"desc": "Atenuador domiciliario de 16dB", "precio": 150.00},
     "ALAR30": {"desc": "ALARGUE 30 MTS", "precio": 25000.00},
     "BANDE": {"desc": "BANDERA", "precio": 3500.00},
     "BOLHEI": {"desc": "BOLSO EINHELL", "precio": 30000.00},

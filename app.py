@@ -270,13 +270,12 @@ productos = {
 }
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="Sistema de Carga de Artículos", layout="wide")
+st.set_page_config(page_title="Sistema de Stock", layout="wide")
 
-# Inicializar el "carrito" o lista de carga si no existe
 if 'lista_carga' not in st.session_state:
     st.session_state.lista_carga = []
 
-st.title("📋 Gestión de Artículos y Resumen")
+st.title("📋 Gestión de Auditoría de Stock")
 
 # --- SECCIÓN DE CARGA ---
 col1, col2 = st.columns([1, 2])
@@ -284,138 +283,77 @@ col1, col2 = st.columns([1, 2])
 with col1:
     st.subheader("Cargar Artículo")
     codigo_input = st.text_input("Código del Artículo:").strip()
-    # NUEVO: Input de cantidad
     cantidad_input = st.number_input("Cantidad:", min_value=1, value=1, step=1)
     
     if st.button("➕ Agregar a la lista"):
         if codigo_input in productos:
-            # Agregamos el producto y la cantidad a la memoria
-            item_con_codigo = productos[codigo_input].copy()
-            item_con_codigo['codigo'] = codigo_input
-            item_con_codigo['cantidad'] = cantidad_input
-            item_con_codigo['subtotal'] = item_con_codigo['precio'] * cantidad_input
-            
-            st.session_state.lista_carga.append(item_con_codigo)
-            st.success(f"Agregado: {cantidad_input}x {productos[codigo_input]['desc']}")
+            item = productos[codigo_input].copy()
+            item['codigo'] = codigo_input
+            item['cantidad'] = cantidad_input
+            item['subtotal'] = item['precio'] * cantidad_input
+            st.session_state.lista_carga.append(item)
+            st.success(f"Agregado: {item['desc']}")
         else:
             st.error("Código no encontrado.")
 
+    if st.button("🗑️ Vaciar Lista"):
+        st.session_state.lista_carga = []
+        st.rerun()
+
 # --- SECCIÓN DE RESUMEN ---
 st.divider()
-st.subheader("📝 Resumen de Carga")
+total_final = 0
 
 if st.session_state.lista_carga:
-    total_final = 0
-    # Cabecera de la tabla
-    c_head1, c_head2, c_head3, c_head4, c_head5 = st.columns([1, 3, 1, 1, 0.5])
-    c_head1.write("**Cant.**")
-    c_head2.write("**Descripción**")
-    c_head3.write("**P. Unit**")
-    c_head4.write("**Subtotal**")
+    st.subheader("📝 Detalle de Carga")
     
-    # Mostrar tabla de lo cargado
     for i, item in enumerate(st.session_state.lista_carga):
-        col_cant, col_desc, col_unit, col_sub, col_del = st.columns([1, 3, 1, 1, 0.5])
-        
-        col_cant.write(f"{item['cantidad']}")
-        col_desc.write(f"**{item['desc']}**")
-        col_unit.write(f"${item['precio']:,.2f}")
-        col_sub.write(f"**${item['subtotal']:,.2f}**")
-        
-        total_final += item['subtotal']
-        
-        # Botón para borrar un ítem
-        if col_del.button("❌", key=f"btn_{i}"):
+        c1, c2, c3, c4, c5 = st.columns([1, 3, 1, 1, 0.5])
+        c1.write(f"{item.get('cantidad', 1)}")
+        c2.write(f"**{item['desc']}**")
+        c3.write(f"${item['precio']:,.2f}")
+        c4.write(f"**${item['subtotal']:,.2f}**")
+        if c5.button("❌", key=f"del_{i}"):
             st.session_state.lista_carga.pop(i)
             st.rerun()
+        total_final += item['subtotal']
 
-    st.divider()
-    st.markdown(f"### TOTAL A PROCESAR: **${total_final:,.2f}**")
+    st.markdown(f"## TOTAL: ${total_final:,.2f}")
 
-    # --- EN EL BLOQUE DE GENERAR NOTIFICACIÓN ---
-if st.button("🚀 Generar Recibo de Auditoría"):
-    ahora = datetime.now()
-    fecha_str = ahora.strftime("%d/%m/%Y %H:%M")
+    # --- GENERAR RECIBO ---
+    if st.button("🚀 Generar Recibo de Auditoría"):
+        ahora = datetime.now()
+        fecha_str = ahora.strftime("%d/%m/%Y %H:%M")
 
-    # 1. Cuerpo del mensaje formal
-    cuerpo_formal = (
-        f"Me dirijo a usted desde el área de Stock a los fines de informarle y entregarle "
-        f"el resultado de auditoría sobre sus equipos, materiales y herramientas que fueron "
-        f"entregados en el establecimiento. El mismo ha arrojado un faltante de herramientas "
-        f"de <b>${total_final:,.2f}</b>, que serán descontados de su liquidación final."
-    )
+        filas_html = ""
+        for item in st.session_state.lista_carga:
+            filas_html += f"""
+            <tr>
+                <td style="text-align:center; border-bottom: 1px dashed #ddd; padding: 5px;">{item['cantidad']}</td>
+                <td style="border-bottom: 1px dashed #ddd; padding: 5px;">{item['codigo']}<br><small>{item['desc'][:30]}</small></td>
+                <td style="text-align:right; border-bottom: 1px dashed #ddd; padding: 5px;">${item['subtotal']:,.2f}</td>
+            </tr>
+            """
 
-    # 2. Construcción de las filas del recibo en HTML
-    filas_html = ""
-    for item in st.session_state.lista_carga:
-        cant = item.get('cantidad', 1)
-        subt = item.get('subtotal', item['precio'])
-        desc = item['desc'][:30]  # Limitar descripción
-        filas_html += f"""
-        <tr>
-            <td style="text-align:center; border-bottom: 1px dashed #ddd; padding: 5px;">{cant}</td>
-            <td style="border-bottom: 1px dashed #ddd; padding: 5px;">{item['codigo']}<br><small>{desc}</small></td>
-            <td style="text-align:right; border-bottom: 1px dashed #ddd; padding: 5px;">${subt:,.2f}</td>
-        </tr>
-        """
-
-    # 3. Diseño del Recibo con CSS
-    recibo_estilo = f"""
-    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px;">
-        <div style="background-color: white; max-width: 500px; margin: auto; padding: 30px; 
-                    border: 1px solid #ccc; box-shadow: 0px 4px 10px rgba(0,0,0,0.1); 
-                    font-family: 'Courier New', Courier, monospace; color: #333;">
-            
+        recibo_estilo = f"""
+        <div style="background-color: white; max-width: 500px; margin: 20px auto; padding: 30px; border: 1px solid #ccc; font-family: 'Courier New', Courier, monospace;">
             <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px;">
-                <h2 style="margin: 0; letter-spacing: 2px;">AUDITORÍA DE STOCK</h2>
-                <div style="font-size: 12px;">Comprobante de Faltante</div>
+                <h2 style="margin: 0;">AUDITORÍA DE STOCK</h2>
             </div>
-
-            <div style="margin-top: 15px; font-size: 13px; text-align: right;">
-                <b>FECHA:</b> {fecha_str}
-            </div>
-
-            <div style="margin-top: 20px; font-size: 14px; text-align: justify; font-family: sans-serif; line-height: 1.4;">
-                {cuerpo_formal}
-            </div>
-
-            <table style="width: 100%; margin-top: 25px; border-collapse: collapse; font-size: 13px;">
-                <thead>
-                    <tr style="border-bottom: 2px solid #333;">
-                        <th style="width: 15%;">CANT</th>
-                        <th style="width: 55%; text-align: left;">DETALLE</th>
-                        <th style="width: 30%; text-align: right;">SUBTOTAL</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filas_html}
-                </tbody>
+            <div style="text-align: right; margin-top: 10px;"><b>FECHA:</b> {fecha_str}</div>
+            <p style="font-family: sans-serif; font-size: 14px; text-align: justify; margin-top: 20px;">
+                Me dirijo a usted desde el área de Stock a los fines de informarle que el resultado de auditoría ha arrojado un faltante de herramientas de <b>${total_final:,.2f}</b>, que serán descontados de su liquidación final.
+            </p>
+            <table style="width: 100%; margin-top: 20px; border-collapse: collapse; font-size: 13px;">
+                <thead><tr style="border-bottom: 2px solid #333;"><th>CANT</th><th>DETALLE</th><th style="text-align:right;">SUBTOTAL</th></tr></thead>
+                <tbody>{filas_html}</tbody>
             </table>
-
-            <div style="margin-top: 20px; text-align: right; font-size: 18px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px;">
-                TOTAL: ${total_final:,.2f}
-            </div>
-
-            <div style="margin-top: 50px; text-align: center; font-size: 12px;">
-                <p>_________________________________</p>
-                <b>FIRMA RESPONSABLE DE STOCK</b>
-                <p style="color: #666; margin-top: 5px;">Documento interno de control</p>
+            <div style="text-align: right; font-size: 18px; font-weight: bold; margin-top: 20px;">TOTAL: ${total_final:,.2f}</div>
+            <div style="margin-top: 40px; text-align: center; font-size: 12px;">
+                <p>_________________________________<br><b>FIRMA RESPONSABLE DE STOCK</b></p>
             </div>
         </div>
-    </div>
-    """
-
-    # Mostrar el recibo en Streamlit
-    st.markdown(recibo_estilo, unsafe_allow_html=True)
-
-    # Botón para descargar el texto plano (por si necesitan enviarlo por chat)
-    documento_texto = f"AUDITORIA STOCK - {fecha_str}\n\nTOTAL FALTANTE: ${total_final:,.2f}\n\nDetalle:\n"
-    for item in st.session_state.lista_carga:
-        documento_texto += f"- {item.get('cantidad',1)}x {item['codigo']} | ${item.get('subtotal',0):,.2f}\n"
-
-    st.download_button(
-        label="📥 Descargar Resumen para registro",
-        data=documento_texto,
-        file_name=f"recibo_stock_{ahora.strftime('%d_%m_%Y')}.txt",
-        mime="text/plain"
-    )
+        """
+        st.markdown(recibo_estilo, unsafe_allow_html=True)
+else:
+    st.info("La lista está vacía. Carga artículos para generar el recibo.")
